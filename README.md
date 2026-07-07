@@ -1,58 +1,390 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# UCC API - Backend Laravel
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## 📌 Description
 
-## About Laravel
+Backend API de l'application universitaire UCC.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Cette API est développée avec :
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Laravel
+- Laravel Sanctum pour l'authentification API
+- SQLite/MySQL pour la base de données
+- Mailtrap pour les tests d'envoi d'emails
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Le backend est prévu pour être consommé par une application mobile React Native.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+# 🔐 Module Authentification
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Le système d'authentification permet de gérer :
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+- Création de compte utilisateur
+- Connexion utilisateur
+- Déconnexion utilisateur
+- Récupération de l'utilisateur connecté
+- Réinitialisation du mot de passe
+- Vérification d'adresse email
+- Gestion des tokens API avec Sanctum
 
-## Agentic Development
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+---
+
+# ⚙️ Installation
+
+## Prérequis
+
+- PHP >= 8.3
+- Composer
+- SQLite/MySQL
+
+
+## Installation des dépendances
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
 
-## Contributing
+## Configuration environnement
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Copier le fichier `.env.example`
 
-## Code of Conduct
+```bash
+cp .env.example .env
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
 
-## Security Vulnerabilities
+Générer la clé Laravel :
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan key:generate
+```
 
-## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Configurer la base de données dans `.env` :
+
+Exemple SQLite :
+
+```env
+DB_CONNECTION=sqlite
+```
+
+
+Créer la base :
+
+```bash
+touch database/database.sqlite
+```
+
+
+Lancer les migrations :
+
+```bash
+php artisan migrate
+```
+
+
+Démarrer le serveur :
+
+```bash
+php artisan serve
+```
+
+
+---
+
+# 📧 Configuration Email
+
+Les emails sont utilisés pour :
+
+- Réinitialisation du mot de passe
+- Vérification d'adresse email
+
+
+Configuration Mailtrap :
+
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=sandbox.smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USERNAME=votre_username
+MAIL_PASSWORD=votre_password
+
+MAIL_FROM_ADDRESS=noreply@ucc.cd
+MAIL_FROM_NAME="UCC"
+```
+
+
+Configuration frontend :
+
+```env
+FRONTEND_URL=ucc://auth
+```
+
+
+Cette URL permet de générer des liens compatibles React Native.
+
+
+---
+
+# 🔑 Authentification API
+
+Toutes les routes API utilisent :
+
+```
+/api
+```
+
+
+---
+
+# 1. Inscription
+
+## Endpoint
+
+```
+POST /api/register
+```
+
+
+## Body JSON
+
+```json
+{
+    "first_name": "Franck",
+    "last_name": "Kapula",
+    "email": "franck@test.com",
+    "phone": "0812345678",
+    "password": "password123",
+    "password_confirmation": "password123",
+    "role": "student",
+    "faculty_id": 1,
+    "promotion_id": 1
+}
+```
+
+
+---
+
+# 2. Connexion
+
+## Endpoint
+
+```
+POST /api/login
+```
+
+
+## Body JSON
+
+```json
+{
+    "email": "franck@test.com",
+    "password": "password123"
+}
+```
+
+
+## Réponse
+
+```json
+{
+    "success": true,
+    "token": "2|xxxxxxxxxxxx",
+    "user": {
+        "id":1,
+        "email":"franck@test.com"
+    }
+}
+```
+
+
+Le token obtenu doit être envoyé dans les routes protégées :
+
+```
+Authorization: Bearer TOKEN
+```
+
+
+---
+
+# 3. Utilisateur connecté
+
+## Endpoint
+
+```
+GET /api/me
+```
+
+
+## Header
+
+```
+Authorization: Bearer TOKEN
+```
+
+
+Réponse :
+
+```json
+{
+    "id":1,
+    "first_name":"Franck",
+    "last_name":"Kapula",
+    "email":"franck@test.com"
+}
+```
+
+
+---
+
+# 4. Déconnexion
+
+## Endpoint
+
+```
+POST /api/logout
+```
+
+
+Header :
+
+```
+Authorization: Bearer TOKEN
+```
+
+
+---
+
+# 5. Mot de passe oublié
+
+
+## Endpoint
+
+```
+POST /api/forgot-password
+```
+
+
+Body :
+
+```json
+{
+    "email":"franck@test.com"
+}
+```
+
+
+Réponse :
+
+```json
+{
+    "success":true,
+    "message":"Un lien de réinitialisation a été envoyé à votre adresse e-mail."
+}
+```
+
+
+---
+
+# 6. Réinitialisation du mot de passe
+
+
+## Endpoint
+
+```
+POST /api/reset-password
+```
+
+
+Body :
+
+```json
+{
+    "token":"token_recu_par_email",
+    "email":"franck@test.com",
+    "password":"newpassword123",
+    "password_confirmation":"newpassword123"
+}
+```
+
+
+Réponse :
+
+```json
+{
+    "success":true,
+    "message":"Votre mot de passe a été réinitialisé avec succès."
+}
+```
+
+
+---
+
+# 🛡️ Sécurité
+
+Le système utilise :
+
+- Laravel Sanctum
+- Hashage sécurisé des mots de passe
+- Validation Laravel
+- Tokens API
+- Protection des routes avec middleware auth:sanctum
+- Expiration des liens email
+
+
+---
+
+# 📂 Structure Authentification
+
+
+```
+app
+├── Http
+│   ├── Controllers
+│   │   └── Auth
+│   │       ├── RegisteredUserController.php
+│   │       ├── AuthenticatedSessionController.php
+│   │       ├── PasswordResetLinkController.php
+│   │       └── NewPasswordController.php
+│   │
+│   └── Requests
+│       └── Auth
+│           └── LoginRequest.php
+│
+└── Providers
+    └── AppServiceProvider.php
+```
+
+
+---
+
+# 🧪 Tests
+
+Tester les routes avec :
+
+- Postman
+- Insomnia
+- Curl
+
+
+Ordre conseillé :
+
+1. Register
+2. Login
+3. Copier le token
+4. Tester `/me`
+5. Logout
+6. Forgot password
+7. Reset password
+
+
+---
+
+# Version
+
+```
+Authentication API v1.0
+Laravel + Sanctum
+```

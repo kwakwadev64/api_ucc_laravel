@@ -2,4 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::post('/create-user', [App\Http\Controllers\UserController::class, 'store']);
+Route::get('/', function () {
+    return ['Laravel' => app()->version()];
+});
+
+require __DIR__.'/auth.php';
