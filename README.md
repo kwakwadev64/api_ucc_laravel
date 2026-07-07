@@ -319,9 +319,105 @@ Réponse :
 }
 ```
 
+6. Liste de facultés, filières, et promotion
 
+GET  api/register-options
+
+
+Réponse :
+
+```json
 ---
 
+{
+    "faculties": [
+        {
+            "id": 1,
+            "name": "Faculté d’Économie et Développement"
+        },
+        {
+            "id": 2,
+            "name": "Faculté de Droit"
+        },
+        {
+            "id": 3,
+            "name": "Faculté de Médecine"
+        },
+        {
+            "id": 4,
+            "name": "Faculté de Sciences Informatiques"
+        },
+        {
+            "id": 5,
+            "name": "Faculté des Sciences Politiques"
+        },
+        {
+            "id": 6,
+            "name": "Faculté des Communications Sociales"
+        },
+        {
+            "id": 7,
+            "name": "Faculté de Théologie"
+        },
+        {
+            "id": 8,
+            "name": "Faculté de Droit Canonique"
+        },
+        {
+            "id": 9,
+            "name": "Faculté de Philosophie"
+        }
+    ],
+    "programs": [
+        {
+            "id": 1,
+            "name": "Conception des systemes d’information",
+            "faculty_id": 4
+        },
+        {
+            "id": 2,
+            "name": "Réseaux informatiques",
+            "faculty_id": 4
+        }
+    ],
+    "promotions": [
+        {
+            "id": 1,
+            "level": "L1",
+            "program_id": null
+        },
+        {
+            "id": 2,
+            "level": "L2",
+            "program_id": null
+        },
+        {
+            "id": 3,
+            "level": "L3",
+            "program_id": null
+        },
+        {
+            "id": 4,
+            "level": "M1",
+            "program_id": 1
+        },
+        {
+            "id": 5,
+            "level": "M2",
+            "program_id": 1
+        },
+        {
+            "id": 6,
+            "level": "M1",
+            "program_id": 2
+        },
+        {
+            "id": 7,
+            "level": "M2",
+            "program_id": 2
+        }
+    ]
+}
 # 🛡️ Sécurité
 
 Le système utilise :
