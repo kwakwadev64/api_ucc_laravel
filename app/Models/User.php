@@ -2,33 +2,79 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, HasApiTokens, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
+
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Les champs autorisés en assignation massive
+     */
+    protected $fillable = [
+        'first_name',
+        'last_name',
+        'email',
+        'phone',
+        'password',
+        'role',
+        'faculty_id',
+        'promotion_id',
+        'profile_photo',
+        'is_active',
+    ];
+
+
+    /**
+     * Les champs cachés dans les réponses JSON
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+
+    /**
+     * Conversion des types
      */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
+    }
+
+
+    /**
+     * Un utilisateur appartient à une faculté
+     */
+    public function faculty()
+    {
+        return $this->belongsTo(Faculty::class);
+    }
+
+
+    /**
+     * Un étudiant appartient à une promotion
+     */
+    public function promotion()
+    {
+        return $this->belongsTo(Promotion::class);
+    }
+
+
+    /**
+     * Un enseignant peut publier plusieurs cours
+     */
+    public function courses()
+    {
+        return $this->hasMany(Course::class, 'teacher_id');
     }
 }

@@ -9,7 +9,7 @@ return [
     |
     | This value is the name of your application, which will be used when the
     | framework needs to place the application's name in a notification or
-    | other UI elements where an application name needs to be displayed.
+    | other UI elements where the application's name needs to be displayed.
     |
     */
 
@@ -53,6 +53,19 @@ return [
     */
 
     'url' => env('APP_URL', 'http://localhost'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Frontend URL
+    |--------------------------------------------------------------------------
+    |
+    | Cette URL est utilisée pour générer les liens envoyés dans les e-mails
+    | (réinitialisation du mot de passe, vérification d'e-mail, etc.).
+    | Elle doit pointer vers votre application React Native/Web.
+    |
+    */
+
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
 
     /*
     |--------------------------------------------------------------------------
