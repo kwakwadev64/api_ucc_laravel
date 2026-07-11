@@ -24,6 +24,13 @@ class AcademicYear extends Model
     {
         return $this->hasMany(Promotion::class);
     }
+    /**
+     * Users liées à cette année académique
+     */
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
 
 
     /**

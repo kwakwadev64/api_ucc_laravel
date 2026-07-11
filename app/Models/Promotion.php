@@ -10,10 +10,10 @@ class Promotion extends Model
     use HasFactory;
 
     protected $fillable = [
+        'name',
         'faculty_id',
         'program_id',
         'level',
-        'academic_year_id',
         'is_active',
     ];
 
@@ -39,10 +39,7 @@ class Promotion extends Model
     /**
      * Année académique de la promotion
      */
-    public function academicYear()
-    {
-        return $this->belongsTo(AcademicYear::class);
-    }
+    
 
     public function courses()
 {

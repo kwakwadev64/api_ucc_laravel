@@ -7,8 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Models\Contracts\HasName;
+use Filament\Panel;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser, HasName
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -25,6 +28,7 @@ class User extends Authenticatable
         'role',
         'faculty_id',
         'promotion_id',
+        'academic_year_id',
         'profile_photo',
         'is_active',
     ];
@@ -53,6 +57,24 @@ class User extends Authenticatable
 
 
     /**
+     * Autoriser l'accès au panel Filament
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return true;
+    }
+
+
+    /**
+     * Nom affiché par Filament
+     */
+    public function getFilamentName(): string
+    {
+        return "{$this->first_name} {$this->last_name}";
+    }
+
+
+    /**
      * Un utilisateur appartient à une faculté
      */
     public function faculty()
@@ -67,6 +89,10 @@ class User extends Authenticatable
     public function promotion()
     {
         return $this->belongsTo(Promotion::class);
+    }
+    public function academicYear()
+    {
+        return $this->belongsTo(AcademicYear::class);
     }
 
 

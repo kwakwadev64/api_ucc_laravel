@@ -63,13 +63,17 @@ class RegisterUserRequest extends FormRequest
             ],
 
             'faculty_id' => [
-                'nullable',
+                'required',
                 'exists:faculties,id',
             ],
 
             'promotion_id' => [
-                'nullable',
+               'required',
                 'exists:promotions,id',
+            ],
+            'academic_year_id' => [
+                'required',
+                'exists:academic_years,id',
             ],
 
             'profile_photo' => [
