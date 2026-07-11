@@ -6,7 +6,7 @@ use Illuminate\Database\Seeder;
 use App\Models\Promotion;
 use App\Models\Faculty;
 use App\Models\Program;
-use App\Models\AcademicYear;
+use Illuminate\Support\Facades\DB;
 
 class PromotionSeeder extends Seeder
 {
@@ -15,58 +15,43 @@ class PromotionSeeder extends Seeder
      */
     public function run(): void
     {
-        // Faculté de Sciences Informatiques
+        DB::table('promotions')->delete();
+
+
+        // Faculté des Sciences Informatiques
         $faculty = Faculty::where('code', 'FSI')->first();
 
-        // Année académique active
-        $academicYear = AcademicYear::where('status', 'active')->first();
 
-
-
-
-
-        if (!$faculty || !$academicYear) {
+        if (!$faculty) {
             return;
         }
 
 
         /*
         |--------------------------------------------------------------------------
-        | Promotions Licence
+        | Promotions Licence (sans filière)
         |--------------------------------------------------------------------------
         */
 
-        $licencePromotions = [
-            [
+        foreach (['L1', 'L2', 'L3'] as $level) {
 
-                'level' => 'L1',
-            ],
-            [
-
-                'level' => 'L2',
-            ],
-            [
-
-                'level' => 'L3',
-            ],
-        ];
-
-
-        foreach ($licencePromotions as $promotion) {
             Promotion::create([
                 'faculty_id' => $faculty->id,
                 'program_id' => null,
-                'academic_year_id' => $academicYear->id,
 
-                'level' => $promotion['level'],
+                'name' => $level . ' ' . $faculty->code,
+
+                'level' => $level,
                 'is_active' => true,
             ]);
+
         }
+
 
 
         /*
         |--------------------------------------------------------------------------
-        | Promotions Master
+        | Promotions Master (avec filière)
         |--------------------------------------------------------------------------
         */
 
@@ -75,24 +60,23 @@ class PromotionSeeder extends Seeder
 
         foreach ($programs as $program) {
 
-            Promotion::create([
-                'faculty_id' => $faculty->id,
-                'program_id' => $program->id,
-                'academic_year_id' => $academicYear->id,
+            foreach (['M1', 'M2'] as $level) {
 
-                'level' => 'M1',
-                'is_active' => true,
-            ]);
+                Promotion::create([
+                    'faculty_id' => $faculty->id,
+                    'program_id' => $program->id,
 
+                    'name' => $level . ' '
+                        . $faculty->code
+                        . ' / '
+                        . $program->code,
 
-            Promotion::create([
-                'faculty_id' => $faculty->id,
-                'program_id' => $program->id,
-                'academic_year_id' => $academicYear->id,
-              
-                'level' => 'M2',
-                'is_active' => true,
-            ]);
+                    'level' => $level,
+                    'is_active' => true,
+                ]);
+
+            }
+
         }
     }
 }

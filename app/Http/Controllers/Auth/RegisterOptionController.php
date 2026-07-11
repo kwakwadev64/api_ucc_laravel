@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Faculty;
 use App\Models\Program;
 use App\Models\Promotion;
+use App\Models\AcademicYear;
 use Illuminate\Http\JsonResponse;
 
 class RegisterOptionController extends Controller
@@ -23,8 +24,14 @@ class RegisterOptionController extends Controller
 
             'promotions' => Promotion::select(
                 'id',
-                'level',
+                'name',
                 'program_id'
+            )->get(),
+            
+            'academic_years' => AcademicYear::select(
+                'id',
+                'name',
+
             )->get(),
         ]);
     }

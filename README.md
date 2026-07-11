@@ -160,7 +160,8 @@ POST /api/register
     "password_confirmation": "password123",
     "role": "student",
     "faculty_id": 1,
-    "promotion_id": 1
+    "promotion_id": 1,
+    "academic_year_id":1
 }
 ```
 

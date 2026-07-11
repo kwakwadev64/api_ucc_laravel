@@ -22,7 +22,6 @@ class AuthenticatedSessionController extends Controller
 
         $user = User::where('email', $login)
             ->orWhere('phone', $login)
-            ->orWhere('matricule', $login)
             ->first();
 
 
