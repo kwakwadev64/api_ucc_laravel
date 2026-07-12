@@ -412,67 +412,445 @@ DELETE /api/courses/{id}
 ```
 
 ---
+Voici la version complète avec les endpoints **GET liste, GET détail (show), PUT modification et DELETE suppression** ajoutés pour les horaires des cours et des examens.
 
-# 🕒 Module Horaires
+```md
+# 📅 Horaires des cours
 
-Le module horaire gère les emplois du temps universitaires.
+Les horaires des cours permettent de publier les emplois du temps liés aux enseignements.
 
-Deux types existent :
-
-* Horaires des cours
-* Horaires des examens
-
-Le type est défini automatiquement par le backend.
-
-L'utilisateur ne choisit jamais le type.
-
----
-
-# Structure d'un horaire
-
-| Champ            | Description      |
-| ---------------- | ---------------- |
-| id               | Identifiant      |
-| faculty_id       | Faculté          |
-| promotion_id     | Promotion        |
-| program_id       | Filière          |
-| academic_year_id | Année académique |
-| type             | course ou exam   |
-| title            | Titre            |
-| file_path        | Document         |
-| file_type        | Extension        |
-| is_active        | Etat             |
-| uploaded_by      | Auteur           |
-
----
-
-# Règles métier des horaires
-
-Un seul horaire actif existe pour une même combinaison :
-
-* Faculté
-* Année académique
-* Type
-* Promotion
-* Programme
-
-Si un nouvel horaire possède les mêmes caractéristiques :
-
-* L'ancien passe à `is_active=false`
-* Le nouveau devient actif
-
----
-
-# Horaires généraux
-
-Un horaire peut concerner toute une faculté.
-
-Dans ce cas :
+Le système utilise la table :
 
 ```
-promotion_id = null
+
+schedules
+
+```
+
+La distinction entre cours et examens est faite avec le champ :
+
+```
+
+type
+
+```
+
+Pour les horaires de cours :
+
+```
+
+type = course
+
+```
+
+---
+
+# Liste des horaires des cours
+
+## Endpoint
+
+```
+
+GET /api/course-schedules
+
+```
+
+## Authentification
+
+Header :
+
+```
+
+Authorization: Bearer TOKEN
+
+````
+
+## Description
+
+Retourne uniquement les horaires ayant :
+
+```json
+{
+    "type": "course",
+    "is_active": true
+}
+````
+
+Le filtrage dépend du rôle :
+
+### Étudiant
+
+Retourne :
+
+* sa faculté
+* son année académique
+* sa promotion
+* son programme
+* les horaires généraux de sa faculté
+
+### Administrateur / CP / Enseignant
+
+Retourne les horaires de cours accessibles.
+
+---
+
+# Création d'un horaire de cours
+
+## Endpoint
+
+```
+POST /api/course-schedules
+```
+
+## Authentification
+
+```
+Authorization: Bearer TOKEN
+```
+
+## Type de requête
+
+```
+multipart/form-data
+```
+
+## Données envoyées
+
+```
+faculty_id
+
+academic_year_id
+
+promotion_id (optionnel)
+
+program_id (optionnel)
+
+title
+
+file
+```
+
+## Exemple
+
+```
+faculty_id = 4
+
+academic_year_id = 1
+
+promotion_id = 3
 
 program_id = null
+
+title = Horaire des cours L3
+
+file = horaire.pdf
+```
+
+## Traitement automatique du backend
+
+Le backend ajoute automatiquement :
+
+```json
+{
+    "type": "course",
+    "uploaded_by": "utilisateur connecté",
+    "file_type": "extension du fichier",
+    "is_active": true
+}
+```
+
+Le type n'est jamais envoyé par le client.
+
+---
+
+# Afficher un horaire de cours
+
+## Endpoint
+
+```
+GET /api/schedules/{schedule}
+```
+
+## Exemple
+
+```
+GET /api/schedules/2
+```
+
+## Réponse
+
+Retourne les informations complètes :
+
+```json
+{
+    "id": 2,
+    "title": "Horaire des cours L3",
+    "type": "course",
+    "faculty": {},
+    "promotion": {},
+    "program": {},
+    "academic_year": {},
+    "file_url": "...",
+    "is_active": true
+}
+```
+
+---
+
+# Modifier un horaire de cours
+
+## Endpoint
+
+```
+PUT /api/schedules/{schedule}
+```
+
+## Exemple
+
+```
+PUT /api/schedules/2
+```
+
+## Données modifiables
+
+```json
+{
+    "title": "Nouvel horaire L3",
+    "promotion_id": 3,
+    "program_id": 1
+}
+```
+
+Le backend conserve :
+
+* le type
+* l'utilisateur créateur
+* l'historique
+
+---
+
+# Supprimer un horaire de cours
+
+## Endpoint
+
+```
+DELETE /api/schedules/{schedule}
+```
+
+## Exemple
+
+```
+DELETE /api/schedules/2
+```
+
+Supprime :
+
+* l'enregistrement dans la base de données
+* le fichier physique associé
+
+---
+
+# 📝 Horaires des examens
+
+Les horaires d'examens utilisent la même table :
+
+```
+schedules
+```
+
+avec :
+
+```
+type = exam
+```
+
+---
+
+# Liste des horaires d'examens
+
+## Endpoint
+
+```
+GET /api/exam-schedules
+```
+
+## Authentification
+
+```
+Authorization: Bearer TOKEN
+```
+
+## Description
+
+Retourne uniquement :
+
+```json
+{
+    "type": "exam",
+    "is_active": true
+}
+```
+
+---
+
+# Création d'un horaire d'examen
+
+## Endpoint
+
+```
+POST /api/exam-schedules
+```
+
+## Authentification
+
+```
+Authorization: Bearer TOKEN
+```
+
+## Type de requête
+
+```
+multipart/form-data
+```
+
+## Données envoyées
+
+```
+faculty_id
+
+academic_year_id
+
+promotion_id (optionnel)
+
+program_id (optionnel)
+
+title
+
+file
+```
+
+## Exemple
+
+```
+faculty_id = 4
+
+academic_year_id = 1
+
+promotion_id = 3
+
+program_id = null
+
+title = Horaire des examens L3
+
+file = examens.pdf
+```
+
+## Traitement automatique du backend
+
+Le backend ajoute automatiquement :
+
+```json
+{
+    "type": "exam",
+    "uploaded_by": "utilisateur connecté",
+    "file_type": "extension du fichier",
+    "is_active": true
+}
+```
+
+Le type examen est imposé par le backend.
+
+---
+
+# Afficher un horaire d'examen
+
+## Endpoint
+
+```
+GET /api/schedules/{schedule}
+```
+
+## Exemple
+
+```
+GET /api/schedules/5
+```
+
+Retourne uniquement l'horaire demandé.
+
+---
+
+# Modifier un horaire d'examen
+
+## Endpoint
+
+```
+PUT /api/schedules/{schedule}
+```
+
+## Exemple
+
+```
+PUT /api/schedules/5
+```
+
+## Données possibles
+
+```json
+{
+    "title": "Horaire examen session principale",
+    "promotion_id": 3,
+    "program_id": null
+}
+```
+
+---
+
+# Supprimer un horaire d'examen
+
+## Endpoint
+
+```
+DELETE /api/schedules/{schedule}
+```
+
+## Exemple
+
+```
+DELETE /api/schedules/5
+```
+
+Supprime :
+
+* l'horaire
+* le fichier associé
+
+---
+
+# 🔄 Gestion des doublons
+
+Le système empêche plusieurs horaires actifs ayant le même contexte.
+
+Un horaire est considéré comme identique si :
+
+```
+faculty_id
+
++
+
+academic_year_id
+
++
+
+type
+
++
+
+promotion_id
+
++
+
+program_id
 ```
 
 Exemple :
@@ -482,14 +860,105 @@ Faculté : Sciences Informatiques
 
 Année : 2025-2026
 
-Type : cours
+Type : course
 
-Promotion : toutes
+Promotion : L3
 
-Programme : toutes
+Programme : CSI
+```
+
+Si un nouvel horaire avec les mêmes caractéristiques est ajouté :
+
+Ancien :
+
+```
+is_active = false
+```
+
+Nouveau :
+
+```
+is_active = true
+```
+
+Cela permet de conserver l'historique tout en affichant uniquement la dernière version active.
+
+---
+
+# 🛠️ Administration Filament
+
+L'administration utilise deux ressources séparées :
+
+```
+Horaires
+
+├── Horaires des cours
+
+└── Horaires des examens
+```
+
+Les deux ressources utilisent le même modèle :
+
+```
+App\Models\Schedule
+```
+
+et la même table :
+
+```
+schedules
+```
+
+La séparation est faite grâce au champ :
+
+```
+type
 ```
 
 ---
+
+## Ressource horaires des cours
+
+```
+CourseScheduleResource
+```
+
+Filtre automatiquement :
+
+```
+type = course
+```
+
+---
+
+## Ressource horaires des examens
+
+```
+ExamScheduleResource
+```
+
+Filtre automatiquement :
+
+```
+type = exam
+```
+
+Ainsi l'administrateur voit deux menus différents alors que les données restent centralisées.
+
+```
+
+Cette version correspond exactement à tes routes actuelles :
+
+- `GET /api/course-schedules`
+- `POST /api/course-schedules`
+- `GET /api/exam-schedules`
+- `POST /api/exam-schedules`
+- `GET /api/schedules/{schedule}`
+- `PUT /api/schedules/{schedule}`
+- `DELETE /api/schedules/{schedule}`
+
+Elle est prête à remplacer ta section dans le README.
+```
 
 
 
