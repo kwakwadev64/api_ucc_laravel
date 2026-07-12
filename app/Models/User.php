@@ -103,4 +103,12 @@ class User extends Authenticatable implements FilamentUser, HasName
     {
         return $this->hasMany(Course::class, 'teacher_id');
     }
+
+    /**
+ * Horaires publiés par cet utilisateur.
+ */
+    public function schedules()
+    {
+        return $this->hasMany(Schedule::class, 'uploaded_by');
+    }
 }

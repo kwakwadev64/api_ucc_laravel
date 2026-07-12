@@ -53,6 +53,13 @@ public function students()
     return $this->hasMany(User::class);
 }
 
+/**
+ * Horaires publiés par cet utilisateur.
+ */
 
+    public function schedules()
+    {
+        return $this->hasMany(Schedule::class, 'promotion_id');
+    }
 
 }

@@ -14,7 +14,7 @@ class Program extends Model
         'name',
         'code',
         'cycle',
-      
+
     ];
 
 
@@ -34,4 +34,12 @@ class Program extends Model
     {
         return $this->hasMany(Promotion::class);
     }
+
+    /**
+ * Horaires de la filiere
+ */
+public function schedules()
+{
+    return $this->hasMany(Schedule::class, 'program_id');
+}
 }

@@ -1,3 +1,6 @@
+
+
+````md
 # UCC API - Backend Laravel
 
 ## 📌 Description
@@ -9,23 +12,22 @@ Cette API est développée avec :
 - Laravel
 - Laravel Sanctum pour l'authentification API
 - SQLite/MySQL pour la base de données
+- Filament pour l'administration
 - Mailtrap pour les tests d'envoi d'emails
 
 Le backend est prévu pour être consommé par une application mobile React Native.
 
----
+L'API permet de gérer :
 
-# 🔐 Module Authentification
-
-Le système d'authentification permet de gérer :
-
-- Création de compte utilisateur
-- Connexion utilisateur
-- Déconnexion utilisateur
-- Récupération de l'utilisateur connecté
-- Réinitialisation du mot de passe
-- Vérification d'adresse email
-- Gestion des tokens API avec Sanctum
+- Authentification des utilisateurs
+- Facultés
+- Programmes / Filières
+- Promotions
+- Années académiques
+- Cours
+- Documents pédagogiques
+- Horaires des cours
+- Horaires des examens
 
 
 ---
@@ -43,8 +45,7 @@ Le système d'authentification permet de gérer :
 
 ```bash
 composer install
-```
-
+````
 
 ## Configuration environnement
 
@@ -54,13 +55,11 @@ Copier le fichier `.env.example`
 cp .env.example .env
 ```
 
-
 Générer la clé Laravel :
 
 ```bash
 php artisan key:generate
 ```
-
 
 Configurer la base de données dans `.env` :
 
@@ -70,13 +69,11 @@ Exemple SQLite :
 DB_CONNECTION=sqlite
 ```
 
-
 Créer la base :
 
 ```bash
 touch database/database.sqlite
 ```
-
 
 Lancer les migrations :
 
@@ -84,6 +81,11 @@ Lancer les migrations :
 php artisan migrate
 ```
 
+Créer le lien storage :
+
+```bash
+php artisan storage:link
+```
 
 Démarrer le serveur :
 
@@ -91,16 +93,14 @@ Démarrer le serveur :
 php artisan serve
 ```
 
-
 ---
 
 # 📧 Configuration Email
 
 Les emails sont utilisés pour :
 
-- Réinitialisation du mot de passe
-- Vérification d'adresse email
-
+* Réinitialisation du mot de passe
+* Vérification d'adresse email
 
 Configuration Mailtrap :
 
@@ -115,20 +115,17 @@ MAIL_FROM_ADDRESS=noreply@ucc.cd
 MAIL_FROM_NAME="UCC"
 ```
 
-
 Configuration frontend :
 
 ```env
 FRONTEND_URL=ucc://auth
 ```
 
-
 Cette URL permet de générer des liens compatibles React Native.
-
 
 ---
 
-# 🔑 Authentification API
+# 🔐 Authentification API
 
 Toutes les routes API utilisent :
 
@@ -136,6 +133,58 @@ Toutes les routes API utilisent :
 /api
 ```
 
+Le système utilise :
+
+* Laravel Sanctum
+* Token Bearer
+* Middleware auth:sanctum
+
+Header pour les routes protégées :
+
+```
+Authorization: Bearer TOKEN
+```
+
+---
+
+# 👤 Gestion des utilisateurs
+
+Les utilisateurs possèdent :
+
+| Champ            | Description      |
+| ---------------- | ---------------- |
+| first_name       | Prénom           |
+| last_name        | Nom              |
+| email            | Email            |
+| phone            | Téléphone        |
+| role             | Rôle             |
+| faculty_id       | Faculté          |
+| promotion_id     | Promotion        |
+| academic_year_id | Année académique |
+
+Rôles disponibles :
+
+```
+student
+teacher
+cp
+faculty_admin
+super_admin
+```
+
+---
+
+# 🔑 Module Authentification
+
+Le système permet :
+
+* Création de compte utilisateur
+* Connexion utilisateur
+* Déconnexion utilisateur
+* Récupération utilisateur connecté
+* Réinitialisation du mot de passe
+* Vérification email
+* Gestion des tokens API avec Sanctum
 
 ---
 
@@ -146,7 +195,6 @@ Toutes les routes API utilisent :
 ```
 POST /api/register
 ```
-
 
 ## Body JSON
 
@@ -159,12 +207,11 @@ POST /api/register
     "password": "password123",
     "password_confirmation": "password123",
     "role": "student",
-    "faculty_id": 1,
-    "promotion_id": 1,
-    "academic_year_id":1
+    "faculty_id": 4,
+    "promotion_id": 3,
+    "academic_year_id": 1
 }
 ```
-
 
 ---
 
@@ -176,78 +223,35 @@ POST /api/register
 POST /api/login
 ```
 
-
-## Body JSON
+Body :
 
 ```json
 {
-    "email": "franck@test.com",
-    "password": "password123"
+    "email":"franck@test.com",
+    "password":"password123"
 }
 ```
 
-
-## Réponse
+Réponse :
 
 ```json
 {
-    "success": true,
-    "token": "2|xxxxxxxxxxxx",
-    "user": {
+    "success":true,
+    "token":"2|xxxxxxxx",
+    "user":{
         "id":1,
         "email":"franck@test.com"
     }
 }
 ```
 
-
-Le token obtenu doit être envoyé dans les routes protégées :
-
-```
-Authorization: Bearer TOKEN
-```
-
-
 ---
 
 # 3. Utilisateur connecté
 
-## Endpoint
-
 ```
 GET /api/me
 ```
-
-
-## Header
-
-```
-Authorization: Bearer TOKEN
-```
-
-
-Réponse :
-
-```json
-{
-    "id":1,
-    "first_name":"Franck",
-    "last_name":"Kapula",
-    "email":"franck@test.com"
-}
-```
-
-
----
-
-# 4. Déconnexion
-
-## Endpoint
-
-```
-POST /api/logout
-```
-
 
 Header :
 
@@ -255,18 +259,21 @@ Header :
 Authorization: Bearer TOKEN
 ```
 
+---
+
+# 4. Déconnexion
+
+```
+POST /api/logout
+```
 
 ---
 
 # 5. Mot de passe oublié
 
-
-## Endpoint
-
 ```
 POST /api/forgot-password
 ```
-
 
 Body :
 
@@ -276,184 +283,255 @@ Body :
 }
 ```
 
-
-Réponse :
-
-```json
-{
-    "success":true,
-    "message":"Un lien de réinitialisation a été envoyé à votre adresse e-mail."
-}
-```
-
-
 ---
 
-# 6. Réinitialisation du mot de passe
-
-
-## Endpoint
+# 6. Réinitialisation mot de passe
 
 ```
 POST /api/reset-password
 ```
 
-
 Body :
 
 ```json
 {
-    "token":"token_recu_par_email",
+    "token":"token",
     "email":"franck@test.com",
     "password":"newpassword123",
     "password_confirmation":"newpassword123"
 }
 ```
 
-
-Réponse :
-
-```json
-{
-    "success":true,
-    "message":"Votre mot de passe a été réinitialisé avec succès."
-}
-```
-
-6. Liste de facultés, filières, et promotion
-
-GET  api/register-options
-
-
-Réponse :
-
-```json
 ---
 
-{
-    "faculties": [
-        {
-            "id": 1,
-            "name": "Faculté d’Économie et Développement"
-        },
-        {
-            "id": 2,
-            "name": "Faculté de Droit"
-        },
-        {
-            "id": 3,
-            "name": "Faculté de Médecine"
-        },
-        {
-            "id": 4,
-            "name": "Faculté de Sciences Informatiques"
-        },
-        {
-            "id": 5,
-            "name": "Faculté des Sciences Politiques"
-        },
-        {
-            "id": 6,
-            "name": "Faculté des Communications Sociales"
-        },
-        {
-            "id": 7,
-            "name": "Faculté de Théologie"
-        },
-        {
-            "id": 8,
-            "name": "Faculté de Droit Canonique"
-        },
-        {
-            "id": 9,
-            "name": "Faculté de Philosophie"
-        }
-    ],
-    "programs": [
-        {
-            "id": 1,
-            "name": "Conception des systemes d’information",
-            "faculty_id": 4
-        },
-        {
-            "id": 2,
-            "name": "Réseaux informatiques",
-            "faculty_id": 4
-        }
-    ],
-    "promotions": [
-        {
-            "id": 1,
-            "level": "L1",
-            "program_id": null
-        },
-        {
-            "id": 2,
-            "level": "L2",
-            "program_id": null
-        },
-        {
-            "id": 3,
-            "level": "L3",
-            "program_id": null
-        },
-        {
-            "id": 4,
-            "level": "M1",
-            "program_id": 1
-        },
-        {
-            "id": 5,
-            "level": "M2",
-            "program_id": 1
-        },
-        {
-            "id": 6,
-            "level": "M1",
-            "program_id": 2
-        },
-        {
-            "id": 7,
-            "level": "M2",
-            "program_id": 2
-        }
-    ]
-}
+# 🎓 Données académiques
+
+## Liste facultés, programmes et promotions
+
+Endpoint :
+
+```
+GET /api/register-options
+```
+
+Retourne :
+
+* Facultés
+* Programmes
+* Promotions
+
+---
+
+# 📚 Module Cours
+
+Le module Cours permet de gérer les ressources pédagogiques.
+
+Fonctionnalités :
+
+* Création d'un cours
+* Association à un enseignant
+* Association à une promotion
+* Ajout d'un document
+* Publication d'un cours
+* Consultation par les étudiants
+
+## Structure d'un cours
+
+| Champ            | Description      |
+| ---------------- | ---------------- |
+| id               | Identifiant      |
+| teacher_id       | Enseignant       |
+| promotion_id     | Promotion        |
+| academic_year_id | Année académique |
+| title            | Titre            |
+| description      | Description      |
+| file_path        | Document         |
+| file_type        | Type fichier     |
+| is_published     | Publication      |
+
+---
+
+# API Cours
+
+## Liste des cours
+
+```
+GET /api/courses
+```
+
+Header :
+
+```
+Authorization: Bearer TOKEN
+```
+
+---
+
+## Ajouter un cours
+
+```
+POST /api/courses
+```
+
+Type :
+
+```
+multipart/form-data
+```
+
+Exemple :
+
+```
+teacher_id=5
+
+promotion_id=3
+
+academic_year_id=1
+
+title=Programmation Web
+
+description=Cours Laravel
+
+file=document.pdf
+```
+
+---
+
+## Modifier un cours
+
+```
+PUT /api/courses/{id}
+```
+
+---
+
+## Supprimer un cours
+
+```
+DELETE /api/courses/{id}
+```
+
+---
+
+# 🕒 Module Horaires
+
+Le module horaire gère les emplois du temps universitaires.
+
+Deux types existent :
+
+* Horaires des cours
+* Horaires des examens
+
+Le type est défini automatiquement par le backend.
+
+L'utilisateur ne choisit jamais le type.
+
+---
+
+# Structure d'un horaire
+
+| Champ            | Description      |
+| ---------------- | ---------------- |
+| id               | Identifiant      |
+| faculty_id       | Faculté          |
+| promotion_id     | Promotion        |
+| program_id       | Filière          |
+| academic_year_id | Année académique |
+| type             | course ou exam   |
+| title            | Titre            |
+| file_path        | Document         |
+| file_type        | Extension        |
+| is_active        | Etat             |
+| uploaded_by      | Auteur           |
+
+---
+
+# Règles métier des horaires
+
+Un seul horaire actif existe pour une même combinaison :
+
+* Faculté
+* Année académique
+* Type
+* Promotion
+* Programme
+
+Si un nouvel horaire possède les mêmes caractéristiques :
+
+* L'ancien passe à `is_active=false`
+* Le nouveau devient actif
+
+---
+
+# Horaires généraux
+
+Un horaire peut concerner toute une faculté.
+
+Dans ce cas :
+
+```
+promotion_id = null
+
+program_id = null
+```
+
+Exemple :
+
+```
+Faculté : Sciences Informatiques
+
+Année : 2025-2026
+
+Type : cours
+
+Promotion : toutes
+
+Programme : toutes
+```
+
+---
+
+
+
 # 🛡️ Sécurité
 
 Le système utilise :
 
-- Laravel Sanctum
-- Hashage sécurisé des mots de passe
-- Validation Laravel
-- Tokens API
-- Protection des routes avec middleware auth:sanctum
-- Expiration des liens email
-
+* Laravel Sanctum
+* Hashage sécurisé des mots de passe
+* Validation Laravel Request
+* Policies Laravel
+* Protection auth:sanctum
+* Gestion des permissions
+* Expiration des liens email
 
 ---
 
-# 📂 Structure Authentification
-
+# 📂 Structure principale
 
 ```
 app
-├── Http
-│   ├── Controllers
-│   │   └── Auth
-│   │       ├── RegisteredUserController.php
-│   │       ├── AuthenticatedSessionController.php
-│   │       ├── PasswordResetLinkController.php
-│   │       └── NewPasswordController.php
-│   │
-│   └── Requests
-│       └── Auth
-│           └── LoginRequest.php
-│
-└── Providers
-    └── AppServiceProvider.php
-```
 
+├── Http
+
+│   ├── Controllers
+
+│   ├── Requests
+
+│   └── Resources
+
+
+├── Models
+
+
+├── Services
+
+
+├── Policies
+
+
+└── Filament
+```
 
 ---
 
@@ -461,27 +539,32 @@ app
 
 Tester les routes avec :
 
-- Postman
-- Insomnia
-- Curl
-
+* Postman
+* Insomnia
+* Curl
 
 Ordre conseillé :
 
 1. Register
 2. Login
 3. Copier le token
-4. Tester `/me`
-5. Logout
-6. Forgot password
-7. Reset password
-
+4. Tester /me
+5. Tester les cours
+6. Tester les horaires cours
+7. Tester les horaires examens
+8. Logout
+9. Forgot password
+10. Reset password
 
 ---
 
 # Version
 
 ```
-Authentication API v1.0
-Laravel + Sanctum
+UCC API v1.0
+
+Laravel + Sanctum + Filament
+```
+
+```
 ```

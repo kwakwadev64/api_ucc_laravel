@@ -30,4 +30,12 @@ class Faculty extends Model
     {
         return $this->hasMany(Promotion::class);
     }
+
+    /**
+ * Horaires de la faculte.
+ */
+public function schedules()
+{
+    return $this->hasMany(Schedule::class, 'faculty_id');
+}
 }

@@ -40,4 +40,13 @@ class AcademicYear extends Model
     {
         return $this->hasMany(Course::class);
     }
+
+
+    /**
+ * Horaires de l'annee academqiue.
+ */
+    public function schedules()
+    {
+        return $this->hasMany(Schedule::class, 'academic_year_id');
+    }
 }

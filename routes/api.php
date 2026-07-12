@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Auth\RegisterOptionController;
 use App\Http\Controllers\Api\CourseController;
+use App\Http\Controllers\Api\ScheduleController;
 
 
 require __DIR__.'/auth.php';
@@ -30,12 +31,19 @@ Route::get(
 
 /*
 |--------------------------------------------------------------------------
-| Cours
+| Routes protégées
 |--------------------------------------------------------------------------
 */
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cours
+    |--------------------------------------------------------------------------
+    */
 
     Route::get(
         '/courses',
@@ -71,5 +79,88 @@ Route::middleware(['auth:sanctum'])->group(function () {
         '/courses/{course}/download',
         [CourseController::class, 'download']
     );
+
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Horaires des cours
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('course-schedules')->group(function () {
+
+
+        Route::get(
+            '/',
+            [ScheduleController::class, 'indexCourses']
+        );
+
+
+        Route::post(
+            '/',
+            [ScheduleController::class, 'storeCourse']
+        );
+
+    });
+
+
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Horaires des examens
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('exam-schedules')->group(function () {
+
+
+        Route::get(
+            '/',
+            [ScheduleController::class, 'indexExams']
+        );
+
+
+        Route::post(
+            '/',
+            [ScheduleController::class, 'storeExam']
+        );
+
+    });
+
+
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Gestion commune des horaires
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/schedules/{schedule}',
+        [ScheduleController::class, 'show']
+    );
+
+
+    Route::put(
+        '/schedules/{schedule}',
+        [ScheduleController::class, 'update']
+    );
+
+
+    Route::delete(
+        '/schedules/{schedule}',
+        [ScheduleController::class, 'destroy']
+    );
+
+
 
 });

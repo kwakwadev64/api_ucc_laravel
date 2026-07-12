@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             PromotionSeeder::class,
             StudentSeeder::class,
             SuperAdminSeeder::class,
+            ClearSchedulesSeeder::class,
         ]);
 
 
