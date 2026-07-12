@@ -13,6 +13,7 @@ class Promotion extends Model
         'name',
         'faculty_id',
         'program_id',
+        'faculty_id',
         'level',
         'is_active',
     ];
@@ -36,10 +37,12 @@ class Promotion extends Model
     }
 
 
+
+
     /**
      * Année académique de la promotion
      */
-    
+
 
     public function courses()
 {

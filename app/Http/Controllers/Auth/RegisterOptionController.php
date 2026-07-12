@@ -25,9 +25,10 @@ class RegisterOptionController extends Controller
             'promotions' => Promotion::select(
                 'id',
                 'name',
-                'program_id'
+                'program_id',
+                'faculty_id'
             )->get(),
-            
+
             'academic_years' => AcademicYear::select(
                 'id',
                 'name',
