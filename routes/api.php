@@ -10,34 +10,21 @@ use App\Http\Controllers\Api\ScheduleController;
 
 require __DIR__.'/auth.php';
 
-
-
-
-/*
-|--------------------------------------------------------------------------
-| Options inscription
-|--------------------------------------------------------------------------
-*/
+//Options inscription
 
 Route::get(
     '/register-options',
     [RegisterOptionController::class, 'index']
 );
 
+//Route pour le site web
+Route::get('/accueil-site', [\App\Http\Controllers\site\HomeController::class, 'getHomeData']);
+Route::post('/contact-site', [\App\Http\Controllers\site\MailController::class, 'sendMail']);
 
 
-
-
-
-/*
-|--------------------------------------------------------------------------
-| Routes protégées
-|--------------------------------------------------------------------------
-*/
+//Routes protégées
 
 Route::middleware(['auth:sanctum'])->group(function () {
-
-
 
     /*
     |--------------------------------------------------------------------------
