@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\site\PhotoFamilleController;
 use App\Http\Controllers\site\AuthController;
 use App\Http\Controllers\site\PhotoController;
+use App\Http\Controllers\site\NewsController;
 
 require __DIR__.'/auth.php';
 
@@ -32,6 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/accueil-site', [\App\Http\Controllers\site\HomeController::class, 'getHomeData']);
 Route::post('/contact-site', [\App\Http\Controllers\site\MailController::class, 'sendMail']);
 Route::get('/galerie-site', [PhotoFamilleController::class, 'index']);
+Route::get('/actualites/{id}', [NewsController::class, 'show']);
 
 //Routes protégées
 

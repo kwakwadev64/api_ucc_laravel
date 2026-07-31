@@ -19,7 +19,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\IconColumn;
-use Filament\Forms\Components\TextArea;
+use Filament\Forms\Components\Textarea;
 
 class ActualiteResource extends Resource
 {
@@ -31,7 +31,7 @@ class ActualiteResource extends Resource
     {
         return $form->schema([
             TextInput::make('titre')->label('Titre de l\'actualité')->required(),
-            TextArea::make('description')->label('Description')->required()->maxLength(3000),
+            Textarea::make('description')->label('Description')->required()->maxLength(3000),
             TextInput::make('location')->label('Lieu / Campus'),
             Select::make('filter_type')
                 ->label('Filtre cible')

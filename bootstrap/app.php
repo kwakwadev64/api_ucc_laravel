@@ -11,6 +11,16 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
+            'api/contact-site',
+        ]);
+    })
+    ->withMiddleware(function (Middleware $middleware) {
+        // 🔒 FIX O2SWITCH : Indique à Laravel de faire confiance au Reverse Proxy SSL d'o2switch
+        $middleware->trustProxies(at: '*');
+    })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(prepend: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,

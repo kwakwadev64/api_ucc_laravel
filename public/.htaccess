@@ -5,6 +5,10 @@
 
     RewriteEngine On
 
+    # === CORS : Répondre proprement au preflight OPTIONS ===
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^ - [L,R=204]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
@@ -22,4 +26,13 @@
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
+</IfModule>
+
+# === CORS Headers (présents sur TOUTES les réponses, y compris erreurs/redirects) ===
+<IfModule mod_headers.c>
+    Header always set Access-Control-Allow-Origin "https://fsiucc.com"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, X-XSRF-TOKEN, Accept"
+    Header always set Access-Control-Max-Age "600"
+    Header always set Vary "Origin"
 </IfModule>
