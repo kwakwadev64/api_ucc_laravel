@@ -3,7 +3,7 @@ name: Deploy to o2switch
 on:
   push:
     branches:
-      - master # Remplace par 'master' si le nom de ta branche principale est master
+      - master
 
 jobs:
   deploy:
@@ -20,9 +20,10 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          script_stop: true
           script: |
             cd ~/api_ucc_laravel
+            git reset --hard HEAD
+            git clean -fd
             git pull origin master
             composer install --no-dev --optimize-autoloader
             php artisan config:cache
