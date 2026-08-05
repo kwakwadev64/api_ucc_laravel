@@ -34,6 +34,7 @@ Route::get('/accueil-site', [\App\Http\Controllers\site\HomeController::class, '
 Route::post('/contact-site', [\App\Http\Controllers\site\MailController::class, 'sendMail']);
 Route::get('/galerie-site', [PhotoFamilleController::class, 'index']);
 Route::get('/actualites/{id}', [NewsController::class, 'show']);
+Route::get('/equipes-site', [\App\Http\Controllers\site\EquipeController::class, 'index']);
 
 //Routes protégées
 
