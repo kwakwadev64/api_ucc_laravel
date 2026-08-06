@@ -30,13 +30,6 @@ class SectionEquipeResource extends Resource
                         'developpeurs' => 'Développeurs',
                     ])
                     ->required(),
-                    
-                Forms\Components\Select::make('membre_id')
-                    ->label('Membre rattaché')
-                    ->relationship('membre', 'nom')
-                    ->searchable()
-                    ->preload()
-                    ->required(),
 
                 Forms\Components\TextInput::make('titre')
                     ->required()
@@ -44,9 +37,17 @@ class SectionEquipeResource extends Resource
 
                 Forms\Components\TextInput::make('annee')
                     ->required()
-                    ->placeholder('Ex: 2026'),
+                    ->placeholder('Ex: 2025-2026'),
 
                 Forms\Components\Textarea::make('description')
+                    ->columnSpanFull(),
+
+                Forms\Components\Select::make('membres')
+                    ->label('Membres de la section')
+                    ->relationship('membres', 'nom')
+                    ->multiple() 
+                    ->searchable()
+                    ->preload()
                     ->columnSpanFull(),
             ])->columns(2);
     }
@@ -59,10 +60,11 @@ class SectionEquipeResource extends Resource
                     ->label('Section')
                     ->badge()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('membre.nom')
-                    ->label('Membre')
-                    ->searchable()
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('membres.nom')
+                    ->label('Membres')
+                    ->badge()
+                    ->limitList(3) 
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('titre')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('annee')

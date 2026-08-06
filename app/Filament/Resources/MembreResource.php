@@ -29,8 +29,6 @@ class MembreResource extends Resource
                         Forms\Components\TextInput::make('role')
                             ->required()
                             ->maxLength(255),
-                        Forms\Components\TextInput::make('annee')
-                            ->placeholder('Ex: 2025-2026'),
                         Forms\Components\Textarea::make('description')
                             ->columnSpanFull(),
                         Forms\Components\Textarea::make('sujet_memoire')
@@ -67,8 +65,6 @@ class MembreResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('role')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('annee')
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime('d/m/Y')
                     ->toggleable(isToggledHiddenByDefault: true),
