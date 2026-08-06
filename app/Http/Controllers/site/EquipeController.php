@@ -4,7 +4,6 @@ namespace App\Http\Controllers\site;
 
 use App\Http\Controllers\Controller;
 use App\Models\SectionEquipe;
-use App\Models\Membre;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 
@@ -17,16 +16,15 @@ class EquipeController extends Controller
             ->orderBy('annee', 'desc')
             ->pluck('annee');
 
-        // 2. Charger les sections avec leurs membres associés
-        $sectionsData = SectionEquipe::with('membre')->get();
+        // 2. Charger les sections avec TOUS leurs membres associés (relation Many-to-Many 'membres')
+        $sectionsData = SectionEquipe::with('membres')->get();
 
         // 3. Formater la structure JSON pour React
         $equipesParAnnee = [];
 
-        foreach ($sectionsData as $pivot) {
-            $annee = $pivot->annee;
-            $secId = $pivot->section_id;
-            $membre = $pivot->membre;
+        foreach ($sectionsData as $section) {
+            $annee = $section->annee;
+            $secId = $section->section_id;
 
             if (!isset($equipesParAnnee[$annee])) {
                 $equipesParAnnee[$annee] = [];
@@ -35,36 +33,36 @@ class EquipeController extends Controller
             if (!isset($equipesParAnnee[$annee][$secId])) {
                 $equipesParAnnee[$annee][$secId] = [
                     'id' => $secId,
-                    'titre' => $pivot->titre,
-                    'description' => $pivot->description,
+                    'titre' => $section->titre,
+                    'description' => $section->description,
                     'membres' => []
                 ];
             }
 
-            if ($membre) {
-                // Formater la photo avec l'URL absolue si stockée dans le storage Laravel
+            // Parcourir tous les membres rattachés à cette section
+            foreach ($section->membres as $membre) {
                 $photoUrl = null;
-    if ($membre->photo) {
-        if (str_starts_with($membre->photo, 'http')) {
-            $photoUrl = $membre->photo;
-        } else {
-            // Force l'URL absolue complète
-            $photoUrl = asset(Storage::url($membre->photo));
-        }
-    }
+                if ($membre->photo) {
+                    if (str_starts_with($membre->photo, 'http')) {
+                        $photoUrl = $membre->photo;
+                    } else {
+                        // Force l'URL absolue complète
+                        $photoUrl = asset(Storage::url($membre->photo));
+                    }
+                }
 
-    $equipesParAnnee[$annee][$secId]['membres'][] = [
-        'id' => $membre->id,
-        'nom' => $membre->nom,
-        'role' => $membre->role,
-        'description' => $membre->description,
-        'photo' => $photoUrl,
-        'sujetMemoire' => $membre->sujet_memoire,
-        'github' => $membre->github,
-        'linkedin' => $membre->linkedin,
-        'portfolio' => $membre->portfolio,
-        'sources' => []
-    ];
+                $equipesParAnnee[$annee][$secId]['membres'][] = [
+                    'id' => $membre->id,
+                    'nom' => $membre->nom,
+                    'role' => $membre->role,
+                    'description' => $membre->description,
+                    'photo' => $photoUrl,
+                    'sujetMemoire' => $membre->sujet_memoire,
+                    'github' => $membre->github,
+                    'linkedin' => $membre->linkedin,
+                    'portfolio' => $membre->portfolio,
+                    'sources' => []
+                ];
             }
         }
 
