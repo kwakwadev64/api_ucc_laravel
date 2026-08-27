@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use App\Models\AcademicYear;
 
 class RegisteredUserController extends Controller
 {
@@ -16,6 +17,9 @@ class RegisteredUserController extends Controller
      */
     public function store(RegisterUserRequest $request): JsonResponse
     {
+        $academicYearId = $request->academic_year_id 
+        ?? AcademicYear::where('status', 'active')->first()?->id;
+
         $user = User::create([
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
@@ -26,6 +30,7 @@ class RegisteredUserController extends Controller
             'faculty_id' => $request->faculty_id,
             'promotion_id' => $request->promotion_id,
             'profile_photo' => $request->profile_photo,
+            'academic_year_id' => $academicYearId,
             'is_active' => true,
         ]);
 

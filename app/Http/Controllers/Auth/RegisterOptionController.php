@@ -25,6 +25,7 @@ class RegisterOptionController extends Controller
             'promotions' => Promotion::select(
                 'id',
                 'name',
+                'level',
                 'program_id',
                 'faculty_id'
             )->get(),

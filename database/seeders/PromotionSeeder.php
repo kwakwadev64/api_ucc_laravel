@@ -37,7 +37,7 @@ class PromotionSeeder extends Seeder
 
             Promotion::create([
                 'faculty_id' => $faculty->id,
-                'program_id' => null,
+                'program_id' => 3,
 
                 'name' => $level . ' ' . $faculty->code,
 

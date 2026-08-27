@@ -33,6 +33,12 @@ class ProgramSeeder extends Seeder
                 'cycle' => 'master',
 
             ],
+            [
+                'name' => 'Licence',
+                'code' => 'LSI',
+                'cycle' => 'Licence',
+              
+            ],
 
         ];
 

@@ -58,8 +58,8 @@ class RegisterUserRequest extends FormRequest
             'role' => [
                 'required',
                 'string',
-                'in:student,cp, teacher,faculty_admin,super_admin',
-
+                'in:student,cp,teacher,faculty_admin,super_admin',
+                
             ],
 
             'faculty_id' => [
@@ -72,7 +72,7 @@ class RegisterUserRequest extends FormRequest
                 'exists:promotions,id',
             ],
             'academic_year_id' => [
-                'required',
+                'nullable',
                 'exists:academic_years,id',
             ],
 
