@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Faculty;
-use App\Models\Program;
 use App\Models\Promotion;
 use App\Models\AcademicYear;
 use Illuminate\Http\JsonResponse;
@@ -14,26 +13,23 @@ class RegisterOptionController extends Controller
     public function index(): JsonResponse
     {
         return response()->json([
-            'faculties' => Faculty::select('id', 'name')->get(),
-
-            'programs' => Program::select(
+            'faculties' => Faculty::select(
                 'id',
                 'name',
-                'faculty_id'
+                'code'
             )->get(),
 
             'promotions' => Promotion::select(
                 'id',
                 'name',
                 'level',
-                'program_id',
-                'faculty_id'
+                'faculty_id',
+                'academic_year_id'
             )->get(),
 
             'academic_years' => AcademicYear::select(
                 'id',
-                'name',
-
+                'name'
             )->get(),
         ]);
     }

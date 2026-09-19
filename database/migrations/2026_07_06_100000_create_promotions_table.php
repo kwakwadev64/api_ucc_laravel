@@ -6,24 +6,16 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('promotions', function (Blueprint $table) {
             $table->id();
 
             $table->foreignId('faculty_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+                ->constrained()
+                ->cascadeOnDelete();
 
-            $table->foreignId('program_id')
-                  ->nullable()
-                  ->constrained()
-                  ->nullOnDelete();
-
-          
+            $table->string('name');
 
             $table->enum('level', [
                 'L1',
@@ -31,25 +23,19 @@ return new class extends Migration
                 'L3',
                 'M1',
                 'M2',
-                'D1',
-                'D2',
-                'D3'
             ]);
 
             $table->foreignId('academic_year_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+                ->constrained()
+                ->cascadeOnDelete();
 
             $table->boolean('is_active')
-                  ->default(true);
+                ->default(true);
 
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('promotions');

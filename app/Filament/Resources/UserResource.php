@@ -17,13 +17,12 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    // Icône dans la barre latérale (Navigation)
     protected static ?string $navigationIcon = 'heroicon-o-users';
-    
+
     protected static ?string $navigationLabel = 'Utilisateurs';
-    
+
     protected static ?string $pluralModelLabel = 'Utilisateurs';
-    
+
     protected static ?string $modelLabel = 'Utilisateur';
 
     /**
@@ -34,10 +33,11 @@ class UserResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Card::make()->schema([
+
                     Forms\Components\TextInput::make('first_name')
                         ->label('Prénom')
                         ->maxLength(255),
-                        
+
                     Forms\Components\TextInput::make('last_name')
                         ->label('Nom')
                         ->maxLength(255),
@@ -73,22 +73,30 @@ class UserResource extends Resource
 
                     Forms\Components\Select::make('faculty_id')
                         ->label('Faculté rattachée')
-                        ->relationship('faculty', 'name') // Assure-toi d'avoir défini la relation "faculty" dans ton modèle User
+                        ->relationship('faculty', 'name')
                         ->searchable()
                         ->preload()
                         ->nullable(),
 
                     Forms\Components\Select::make('promotion_id')
                         ->label('Promotion (Classe)')
-                        ->relationship('promotion', 'level') // Assure-toi d'avoir défini la relation "promotion" dans ton modèle User
+                        ->relationship('promotion', 'name')
                         ->searchable()
                         ->preload()
                         ->nullable(),
+
+                    Forms\Components\Select::make('academic_year_id')
+                        ->label('Année académique')
+                        ->relationship('academicYear', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->required(),
 
                     Forms\Components\Toggle::make('is_active')
                         ->label('Compte Actif')
                         ->default(true)
                         ->required(),
+
                 ])->columns(2)
             ]);
     }
@@ -100,23 +108,23 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('id')->sortable(),
-                
+                Tables\Columns\TextColumn::make('id')
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('first_name')
                     ->label('Prénom')
                     ->searchable()
                     ->sortable(),
-                    
+
                 Tables\Columns\TextColumn::make('last_name')
                     ->label('Nom')
                     ->searchable()
                     ->sortable(),
-                    
+
                 Tables\Columns\TextColumn::make('email')
                     ->label('Email')
                     ->searchable(),
 
-                // Badge de couleur selon le rôle attribué
                 Tables\Columns\TextColumn::make('role')
                     ->label('Rôle')
                     ->badge()
@@ -129,7 +137,18 @@ class UserResource extends Resource
                     })
                     ->sortable(),
 
-                // Indicateur visuel pour savoir s'il est actif
+                Tables\Columns\TextColumn::make('faculty.name')
+                    ->label('Faculté')
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('promotion.name')
+                    ->label('Promotion')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('academicYear.name')
+                    ->label('Année académique')
+                    ->sortable(),
+
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Actif')
                     ->boolean()
@@ -140,8 +159,8 @@ class UserResource extends Resource
                     ->dateTime('d/m/Y H:i')
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+
             ->filters([
-                // Filtre 1 : Choisir par rôle exact
                 SelectFilter::make('role')
                     ->label('Filtrer par rôle')
                     ->options([
@@ -152,22 +171,26 @@ class UserResource extends Resource
                         'super_admin' => 'Super Admin',
                     ]),
 
-                // Filtre 2 : Filtrer par statut de compte (Actif / Inactif)
                 TernaryFilter::make('is_active')
                     ->label('Statut du compte')
                     ->trueLabel('Comptes actifs uniquement')
                     ->falseLabel('Comptes bloqués uniquement')
                     ->placeholder('Tous les comptes'),
 
-                // Filtre 3 : Filtrer par faculté (dynamique)
                 SelectFilter::make('faculty_id')
                     ->label('Par Faculté')
-                    ->relationship('faculty', 'name')
+                    ->relationship('faculty', 'name'),
+
+                SelectFilter::make('academic_year_id')
+                    ->label('Par année académique')
+                    ->relationship('academicYear', 'name'),
             ])
+
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
+
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),

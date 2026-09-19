@@ -12,54 +12,39 @@ class Promotion extends Model
     protected $fillable = [
         'name',
         'faculty_id',
-        'program_id',
-        'faculty_id',
         'level',
         'is_active',
     ];
 
-
     /**
-     * Une promotion appartient à une faculté
+     * Une promotion appartient à une faculté.
      */
     public function faculty()
     {
         return $this->belongsTo(Faculty::class);
     }
 
-
     /**
-     * Une promotion peut appartenir à un programme (Master/Doctorat)
+     * Cours de la promotion.
      */
-    public function program()
+    public function courses()
     {
-        return $this->belongsTo(Program::class);
+        return $this->hasMany(Course::class);
     }
 
-
-
+    /**
+     * Étudiants de la promotion.
+     */
+    public function students()
+    {
+        return $this->hasMany(User::class);
+    }
 
     /**
-     * Année académique de la promotion
+     * Horaires de la promotion.
      */
-
-
-    public function courses()
-{
-    return $this->hasMany(Course::class);
-}
-public function students()
-{
-    return $this->hasMany(User::class);
-}
-
-/**
- * Horaires publiés par cet utilisateur.
- */
-
     public function schedules()
     {
         return $this->hasMany(Schedule::class, 'promotion_id');
     }
-
 }

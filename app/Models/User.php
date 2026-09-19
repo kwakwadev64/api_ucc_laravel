@@ -10,6 +10,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasName;
 use Filament\Panel;
+use App\Models\Archive;
 
 class User extends Authenticatable implements FilamentUser, HasName
 {
@@ -111,4 +112,12 @@ class User extends Authenticatable implements FilamentUser, HasName
     {
         return $this->hasMany(Schedule::class, 'uploaded_by');
     }
+
+    public function archives()
+{
+    return $this->hasMany(
+        Archive::class,
+        'uploaded_by'
+    );
+}
 }

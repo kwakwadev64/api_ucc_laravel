@@ -75,12 +75,6 @@ class CourseScheduleResource extends Resource
 
 
 
-                Forms\Components\Select::make('program_id')
-                    ->label('Programme / Filière')
-                    ->relationship('program', 'name')
-                    ->searchable()
-                    ->preload(),
-
 
 
                 Forms\Components\TextInput::make('title')
@@ -150,10 +144,7 @@ class CourseScheduleResource extends Resource
 
 
 
-                Tables\Columns\TextColumn::make('program.name')
-                    ->label('Programme')
-                    ->placeholder('Toutes'),
-
+              
 
 
                 Tables\Columns\TextColumn::make('file_type')

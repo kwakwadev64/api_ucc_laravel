@@ -9,22 +9,12 @@ class Schedule extends Model
 {
     use HasFactory;
 
-    /**
-     * Types d'horaires.
-     */
     public const TYPE_COURSE = 'course';
-
     public const TYPE_EXAM = 'exam';
 
-
-
-    /**
-     * Les champs autorisés en assignation massive.
-     */
     protected $fillable = [
         'faculty_id',
         'promotion_id',
-        'program_id',
         'academic_year_id',
         'type',
         'title',
@@ -34,11 +24,6 @@ class Schedule extends Model
         'uploaded_by',
     ];
 
-
-
-    /**
-     * Conversion automatique des types.
-     */
     protected function casts(): array
     {
         return [
@@ -47,30 +32,12 @@ class Schedule extends Model
         ];
     }
 
-
-
-    /**
-     * Événements du modèle.
-     *
-     * Gestion automatique :
-     * - type du fichier
-     * - utilisateur qui publie
-     */
     protected static function booted()
     {
-        /**
-         * Avant création.
-         */
         static::creating(function ($schedule) {
 
-            /*
-            |--------------------------------------------------------------------------
-            | Génération automatique du type de fichier
-            |--------------------------------------------------------------------------
-            */
             if (
-                !empty($schedule->file_path)
-                &&
+                !empty($schedule->file_path) &&
                 empty($schedule->file_type)
             ) {
                 $schedule->file_type = pathinfo(
@@ -79,35 +46,18 @@ class Schedule extends Model
                 );
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | Enregistrement automatique de l'utilisateur connecté
-            |--------------------------------------------------------------------------
-            */
             if (
-                empty($schedule->uploaded_by)
-                &&
+                empty($schedule->uploaded_by) &&
                 auth()->check()
             ) {
                 $schedule->uploaded_by = auth()->id();
             }
         });
 
-
-
-        /**
-         * Avant modification.
-         */
         static::updating(function ($schedule) {
 
-            /*
-            |--------------------------------------------------------------------------
-            | Mise à jour du type si le fichier change
-            |--------------------------------------------------------------------------
-            */
             if (
-                $schedule->isDirty('file_path')
-                &&
+                $schedule->isDirty('file_path') &&
                 !empty($schedule->file_path)
             ) {
                 $schedule->file_type = pathinfo(
@@ -117,17 +67,6 @@ class Schedule extends Model
             }
         });
     }
-
-
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Relations
-    |--------------------------------------------------------------------------
-    */
-
 
     /**
      * Faculté concernée par l'horaire.
@@ -137,31 +76,13 @@ class Schedule extends Model
         return $this->belongsTo(Faculty::class);
     }
 
-
-
     /**
      * Promotion concernée.
-     *
-     * Peut être null pour un horaire général de faculté.
      */
     public function promotion()
     {
         return $this->belongsTo(Promotion::class);
     }
-
-
-
-    /**
-     * Filière / Programme concerné.
-     *
-     * Peut être null.
-     */
-    public function program()
-    {
-        return $this->belongsTo(Program::class);
-    }
-
-
 
     /**
      * Année académique concernée.
@@ -170,8 +91,6 @@ class Schedule extends Model
     {
         return $this->belongsTo(AcademicYear::class);
     }
-
-
 
     /**
      * Utilisateur ayant publié l'horaire.

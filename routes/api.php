@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Auth\RegisterOptionController;
 use App\Http\Controllers\Api\CourseController;
+use App\Http\Controllers\Api\ArchiveController;
 use App\Http\Controllers\Api\ScheduleController;
 
 use App\Http\Controllers\site\PhotoFamilleController;
@@ -161,6 +162,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
         '/schedules/{schedule}',
         [ScheduleController::class, 'destroy']
     );
+
+
+     /*
+    |--------------------------------------------------------------------------
+     Archives
+    |--------------------------------------------------------------------------
+    */
+
+
+    Route::prefix('archives')->group(function () {
+    Route::get('/', [ArchiveController::class, 'index']);
+    Route::get('/{archive}', [ArchiveController::class, 'show']);
+});
 
 
 

@@ -12,30 +12,23 @@ class Faculty extends Model
     protected $fillable = [
         'name',
         'code',
-
     ];
-
 
     public function users()
     {
         return $this->hasMany(User::class);
     }
 
-
-    public function programs()
-    {
-        return $this->hasMany(Program::class);
-    }
     public function promotions()
     {
         return $this->hasMany(Promotion::class);
     }
 
     /**
- * Horaires de la faculte.
- */
-public function schedules()
-{
-    return $this->hasMany(Schedule::class, 'faculty_id');
-}
+     * Horaires de la faculté.
+     */
+    public function schedules()
+    {
+        return $this->hasMany(Schedule::class, 'faculty_id');
+    }
 }

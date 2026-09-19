@@ -1,5 +1,3 @@
-
-
 ````md
 # UCC API - Backend Laravel
 
@@ -29,7 +27,6 @@ L'API permet de gérer :
 - Horaires des cours
 - Horaires des examens
 
-
 ---
 
 # ⚙️ Installation
@@ -40,11 +37,11 @@ L'API permet de gérer :
 - Composer
 - SQLite/MySQL
 
-
 ## Installation des dépendances
 
 ```bash
 composer install
+```
 ````
 
 ## Configuration environnement
@@ -99,8 +96,8 @@ php artisan serve
 
 Les emails sont utilisés pour :
 
-* Réinitialisation du mot de passe
-* Vérification d'adresse email
+- Réinitialisation du mot de passe
+- Vérification d'adresse email
 
 Configuration Mailtrap :
 
@@ -135,9 +132,9 @@ Toutes les routes API utilisent :
 
 Le système utilise :
 
-* Laravel Sanctum
-* Token Bearer
-* Middleware auth:sanctum
+- Laravel Sanctum
+- Token Bearer
+- Middleware auth:sanctum
 
 Header pour les routes protégées :
 
@@ -178,13 +175,13 @@ super_admin
 
 Le système permet :
 
-* Création de compte utilisateur
-* Connexion utilisateur
-* Déconnexion utilisateur
-* Récupération utilisateur connecté
-* Réinitialisation du mot de passe
-* Vérification email
-* Gestion des tokens API avec Sanctum
+- Création de compte utilisateur
+- Connexion utilisateur
+- Déconnexion utilisateur
+- Récupération utilisateur connecté
+- Réinitialisation du mot de passe
+- Vérification email
+- Gestion des tokens API avec Sanctum
 
 ---
 
@@ -227,8 +224,8 @@ Body :
 
 ```json
 {
-    "email":"franck@test.com",
-    "password":"password123"
+    "email": "franck@test.com",
+    "password": "password123"
 }
 ```
 
@@ -236,11 +233,11 @@ Réponse :
 
 ```json
 {
-    "success":true,
-    "token":"2|xxxxxxxx",
-    "user":{
-        "id":1,
-        "email":"franck@test.com"
+    "success": true,
+    "token": "2|xxxxxxxx",
+    "user": {
+        "id": 1,
+        "email": "franck@test.com"
     }
 }
 ```
@@ -279,7 +276,7 @@ Body :
 
 ```json
 {
-    "email":"franck@test.com"
+    "email": "franck@test.com"
 }
 ```
 
@@ -295,10 +292,10 @@ Body :
 
 ```json
 {
-    "token":"token",
-    "email":"franck@test.com",
-    "password":"newpassword123",
-    "password_confirmation":"newpassword123"
+    "token": "token",
+    "email": "franck@test.com",
+    "password": "newpassword123",
+    "password_confirmation": "newpassword123"
 }
 ```
 
@@ -316,9 +313,9 @@ GET /api/register-options
 
 Retourne :
 
-* Facultés
-* Programmes
-* Promotions
+- Facultés
+- Programmes
+- Promotions
 
 ---
 
@@ -328,12 +325,12 @@ Le module Cours permet de gérer les ressources pédagogiques.
 
 Fonctionnalités :
 
-* Création d'un cours
-* Association à un enseignant
-* Association à une promotion
-* Ajout d'un document
-* Publication d'un cours
-* Consultation par les étudiants
+- Création d'un cours
+- Association à un enseignant
+- Association à une promotion
+- Ajout d'un document
+- Publication d'un cours
+- Consultation par les étudiants
 
 ## Structure d'un cours
 
@@ -412,6 +409,7 @@ DELETE /api/courses/{id}
 ```
 
 ---
+
 Voici la version complète avec les endpoints **GET liste, GET détail (show), PUT modification et DELETE suppression** ajoutés pour les horaires des cours et des examens.
 
 ```md
@@ -420,7 +418,6 @@ Voici la version complète avec les endpoints **GET liste, GET détail (show), P
 Les horaires des cours permettent de publier les emplois du temps liés aux enseignements.
 
 Le système utilise la table :
-
 ```
 
 schedules
@@ -482,11 +479,11 @@ Le filtrage dépend du rôle :
 
 Retourne :
 
-* sa faculté
-* son année académique
-* sa promotion
-* son programme
-* les horaires généraux de sa faculté
+- sa faculté
+- son année académique
+- sa promotion
+- son programme
+- les horaires généraux de sa faculté
 
 ### Administrateur / CP / Enseignant
 
@@ -623,9 +620,9 @@ PUT /api/schedules/2
 
 Le backend conserve :
 
-* le type
-* l'utilisateur créateur
-* l'historique
+- le type
+- l'utilisateur créateur
+- l'historique
 
 ---
 
@@ -645,8 +642,8 @@ DELETE /api/schedules/2
 
 Supprime :
 
-* l'enregistrement dans la base de données
-* le fichier physique associé
+- l'enregistrement dans la base de données
+- le fichier physique associé
 
 ---
 
@@ -822,8 +819,8 @@ DELETE /api/schedules/5
 
 Supprime :
 
-* l'horaire
-* le fichier associé
+- l'horaire
+- le fichier associé
 
 ---
 
@@ -960,19 +957,17 @@ Cette version correspond exactement à tes routes actuelles :
 Elle est prête à remplacer ta section dans le README.
 ```
 
-
-
 # 🛡️ Sécurité
 
 Le système utilise :
 
-* Laravel Sanctum
-* Hashage sécurisé des mots de passe
-* Validation Laravel Request
-* Policies Laravel
-* Protection auth:sanctum
-* Gestion des permissions
-* Expiration des liens email
+- Laravel Sanctum
+- Hashage sécurisé des mots de passe
+- Validation Laravel Request
+- Policies Laravel
+- Protection auth:sanctum
+- Gestion des permissions
+- Expiration des liens email
 
 ---
 
@@ -1008,9 +1003,9 @@ app
 
 Tester les routes avec :
 
-* Postman
-* Insomnia
-* Curl
+- Postman
+- Insomnia
+- Curl
 
 Ordre conseillé :
 
@@ -1036,4 +1031,5 @@ Laravel + Sanctum + Filament
 ```
 
 ```
+
 ```

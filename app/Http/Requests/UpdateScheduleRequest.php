@@ -28,11 +28,6 @@ class UpdateScheduleRequest extends FormRequest
             ],
 
 
-            'program_id' => [
-                'nullable',
-                'exists:programs,id'
-            ],
-
 
             'academic_year_id' => [
                 'sometimes',

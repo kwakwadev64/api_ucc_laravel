@@ -7,9 +7,6 @@ use App\Models\AcademicYear;
 
 class AcademicYearSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $academicYears = [
@@ -19,16 +16,19 @@ class AcademicYearSeeder extends Seeder
                 'end_date' => '2026-07-31',
                 'status' => 'closed',
             ],
-            [
-                'name' => '2026-2027',
-                'start_date' => '2026-09-01',
-                'end_date' => '2027-07-31',
-                'status' => 'active',
-            ],
         ];
 
-        foreach ($academicYears as $year) {
-            AcademicYear::create($year);
+        for ($year = 2026; $year <= 2035; $year++) {
+            $academicYears[] = [
+                'name' => $year . '-' . ($year + 1),
+                'start_date' => $year . '-09-01',
+                'end_date' => ($year + 1) . '-07-31',
+                'status' => $year === 2026 ? 'active' : 'closed',
+            ];
+        }
+
+        foreach ($academicYears as $academicYear) {
+            AcademicYear::create($academicYear);
         }
     }
 }

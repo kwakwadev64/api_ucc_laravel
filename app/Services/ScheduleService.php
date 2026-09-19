@@ -7,48 +7,38 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 class ScheduleService
 {
-
-
     /**
      * Créer un nouvel horaire.
      *
-     * Empêche les doublons :
-     *
-     * Même :
+     * Empêche les doublons selon :
      * - faculté
      * - année académique
-     * - type (course/exam)
-     * - programme
+     * - type
      * - promotion
+     *
+     * Une promotion NULL correspond à un horaire général
+     * de la faculté.
      */
     public function create(
         array $data,
         UploadedFile $file,
         User $user
     ): Schedule {
-
-
         $path = null;
 
-
         try {
-
-
             return DB::transaction(function () use (
                 $data,
                 $file,
                 $user,
                 &$path
             ) {
-
-
-
                 /*
                 |--------------------------------------------------------------------------
                 | Vérifier doublon
@@ -56,17 +46,10 @@ class ScheduleService
                 */
 
                 if ($this->scheduleExists($data)) {
-
-
                     throw new \Exception(
                         "Un horaire identique existe déjà. Veuillez modifier celui qui existe."
                     );
-
-
                 }
-
-
-
 
                 /*
                 |--------------------------------------------------------------------------
@@ -79,10 +62,6 @@ class ScheduleService
                     'public'
                 );
 
-
-
-
-
                 /*
                 |--------------------------------------------------------------------------
                 | Création horaire
@@ -90,106 +69,56 @@ class ScheduleService
                 */
 
                 return Schedule::create([
-
-
                     'faculty_id' => $data['faculty_id'],
-
 
                     'promotion_id' =>
                         $data['promotion_id'] ?? null,
 
-
-                    'program_id' =>
-                        $data['program_id'] ?? null,
-
-
-
                     'academic_year_id' =>
                         $data['academic_year_id'],
-
-
 
                     'type' =>
                         $data['type'],
 
-
-
                     'title' =>
                         $data['title'],
-
-
 
                     'file_path' =>
                         $path,
 
-
-
                     'file_type' =>
                         $file->getClientOriginalExtension(),
-
-
 
                     'is_active' =>
                         true,
 
-
-
                     'uploaded_by' =>
                         $user->id,
-
-
                 ]);
-
-
-
             });
 
-
-
-        } catch(Throwable $e) {
-
-
+        } catch (Throwable $e) {
 
             /*
             |--------------------------------------------------------------------------
-            | Supprimer fichier si erreur
+            | Supprimer le fichier si erreur
             |--------------------------------------------------------------------------
             */
 
-            if($path){
-
-
-                Storage::disk('public')
-                    ->delete($path);
-
-
+            if ($path) {
+                Storage::disk('public')->delete($path);
             }
-
-
-
-
 
             Log::error(
                 'Erreur création horaire',
                 [
-                    'message'=>$e->getMessage()
+                    'message' => $e->getMessage(),
                 ]
             );
 
-
-
             throw $e;
-
-
         }
-
-
     }
-
-
-
-
-
 
     /**
      * Vérifier si un horaire identique existe.
@@ -197,97 +126,45 @@ class ScheduleService
     private function scheduleExists(
         array $data
     ): bool {
-
-
-
         $query = Schedule::where(
-                'faculty_id',
-                $data['faculty_id']
-            )
-
-
-            ->where(
-                'academic_year_id',
-                $data['academic_year_id']
-            )
-
-
-            ->where(
-                'type',
-                $data['type']
-            );
-
-
-
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Programme
-        |--------------------------------------------------------------------------
-        */
-
-        if(!empty($data['program_id'])){
-
-
-            $query->where(
-                'program_id',
-                $data['program_id']
-            );
-
-
-        }else{
-
-
-            $query->whereNull(
-                'program_id'
-            );
-
-
-        }
-
-
-
-
+            'faculty_id',
+            $data['faculty_id']
+        )
+        ->where(
+            'academic_year_id',
+            $data['academic_year_id']
+        )
+        ->where(
+            'type',
+            $data['type']
+        );
 
         /*
         |--------------------------------------------------------------------------
         | Promotion
         |--------------------------------------------------------------------------
+        |
+        | promotion_id = NULL :
+        | horaire général de la faculté.
+        |
+        | promotion_id renseigné :
+        | horaire spécifique à cette promotion.
+        |
         */
 
-        if(!empty($data['promotion_id'])){
-
-
+        if (!empty($data['promotion_id'])) {
             $query->where(
                 'promotion_id',
                 $data['promotion_id']
             );
-
-
-        }else{
-
-
+        } else {
             $query->whereNull(
                 'promotion_id'
             );
-
-
         }
 
-
-
-
         return $query->exists();
-
-
     }
-
-
-
-
-
-
 
     /**
      * Récupérer les horaires accessibles.
@@ -295,44 +172,30 @@ class ScheduleService
      * Étudiant :
      * - sa faculté
      * - son année académique
-     * - son programme
      * - sa promotion
-     * - horaire général faculté
+     * - les horaires généraux de sa faculté
      *
      * Autres rôles :
-     * tous les horaires
+     * - tous les horaires
      */
     public function getSchedulesFor(
         User $user,
         string $type
     ): Collection {
-
-
-
         $query = Schedule::with([
-
             'faculty',
             'promotion',
-            'program',
             'academicYear',
-            'uploader'
-
+            'uploader',
         ])
-
         ->where(
             'type',
             $type
         )
-
         ->where(
             'is_active',
             true
         );
-
-
-
-
-
 
         /*
         |--------------------------------------------------------------------------
@@ -340,21 +203,11 @@ class ScheduleService
         |--------------------------------------------------------------------------
         */
 
-        if($user->role !== 'student'){
-
-
+        if ($user->role !== 'student') {
             return $query
                 ->latest()
                 ->get();
-
-
         }
-
-
-
-
-
-
 
         /*
         |--------------------------------------------------------------------------
@@ -363,91 +216,40 @@ class ScheduleService
         */
 
         return $query
-
-
             ->where(
                 'faculty_id',
                 $user->faculty_id
             )
-
-
             ->where(
                 'academic_year_id',
                 $user->academic_year_id
             )
-
-
-
-            ->where(function($q) use($user){
-
-
+            ->where(function ($q) use ($user) {
 
                 /*
-                | Programme
+                |--------------------------------------------------------------------------
+                | Horaire général
+                |--------------------------------------------------------------------------
                 */
 
-                if($user->program_id){
-
-
-                    $q->where(
-                        'program_id',
-                        $user->program_id
-                    );
-
-
-                }
-
-
-
-
+                $q->whereNull(
+                    'promotion_id'
+                )
 
                 /*
-                | Promotion
+                |--------------------------------------------------------------------------
+                | OU horaire spécifique à la promotion de l'étudiant
+                |--------------------------------------------------------------------------
                 */
 
-                $q->orWhere(
+                ->orWhere(
                     'promotion_id',
                     $user->promotion_id
                 );
-
-
-
-
-
-
-                /*
-                | Horaire général faculté
-                */
-
-                $q->orWhere(function($general){
-
-
-                    $general
-                        ->whereNull('program_id')
-                        ->whereNull('promotion_id');
-
-
-                });
-
-
-
             })
-
-
-
             ->latest()
-
-
             ->get();
-
-
     }
-
-
-
-
-
-
 
     /**
      * Supprimer un horaire.
@@ -455,154 +257,89 @@ class ScheduleService
     public function delete(
         Schedule $schedule
     ): bool {
-
-
-
-        if($schedule->file_path){
-
-
-            Storage::disk('public')
-                ->delete(
-                    $schedule->file_path
-                );
-
-
+        if ($schedule->file_path) {
+            Storage::disk('public')->delete(
+                $schedule->file_path
+            );
         }
 
-
-
-
         return $schedule->delete();
-
-
     }
-
-
-
-
-
-
 
     /**
      * Activer un horaire.
      *
      * Désactive les autres horaires
-     * du même contexte.
+     * du même contexte :
+     *
+     * - faculté
+     * - année académique
+     * - type
+     * - promotion
      */
     public function activate(
         Schedule $schedule
     ): void {
-
-
-
-        DB::transaction(function() use($schedule){
-
-
+        DB::transaction(function () use ($schedule) {
 
             Schedule::where(
-                    'faculty_id',
-                    $schedule->faculty_id
-                )
+                'faculty_id',
+                $schedule->faculty_id
+            )
+            ->where(
+                'academic_year_id',
+                $schedule->academic_year_id
+            )
+            ->where(
+                'type',
+                $schedule->type
+            )
 
+            /*
+            |--------------------------------------------------------------------------
+            | Même promotion
+            |--------------------------------------------------------------------------
+            */
 
-                ->where(
-                    'academic_year_id',
-                    $schedule->academic_year_id
-                )
+            ->where(function ($q) use ($schedule) {
 
+                if ($schedule->promotion_id) {
+                    $q->where(
+                        'promotion_id',
+                        $schedule->promotion_id
+                    );
+                } else {
+                    $q->whereNull(
+                        'promotion_id'
+                    );
+                }
+            })
 
-                ->where(
-                    'type',
-                    $schedule->type
-                )
+            /*
+            |--------------------------------------------------------------------------
+            | Ne pas désactiver l'horaire actuel
+            |--------------------------------------------------------------------------
+            */
 
+            ->where(
+                'id',
+                '!=',
+                $schedule->id
+            )
 
-
-                ->where(function($q) use($schedule){
-
-
-                    if($schedule->program_id){
-
-
-                        $q->where(
-                            'program_id',
-                            $schedule->program_id
-                        );
-
-
-                    }else{
-
-
-                        $q->whereNull(
-                            'program_id'
-                        );
-
-
-                    }
-
-
-                })
-
-
-
-                ->where(function($q) use($schedule){
-
-
-                    if($schedule->promotion_id){
-
-
-                        $q->where(
-                            'promotion_id',
-                            $schedule->promotion_id
-                        );
-
-
-                    }else{
-
-
-                        $q->whereNull(
-                            'promotion_id'
-                        );
-
-
-                    }
-
-
-                })
-
-
-
-                ->where(
-                    'id',
-                    '!=',
-                    $schedule->id
-                )
-
-
-                ->update([
-
-                    'is_active'=>false
-
-                ]);
-
-
-
-
-
-
-
-            $schedule->update([
-
-                'is_active'=>true
-
+            ->update([
+                'is_active' => false,
             ]);
 
+            /*
+            |--------------------------------------------------------------------------
+            | Activer l'horaire actuel
+            |--------------------------------------------------------------------------
+            */
 
-
+            $schedule->update([
+                'is_active' => true,
+            ]);
         });
-
-
     }
-
-
 }

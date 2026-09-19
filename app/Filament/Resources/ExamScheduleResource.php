@@ -76,11 +76,6 @@ class ExamScheduleResource extends Resource
 
 
 
-                Forms\Components\Select::make('program_id')
-                    ->label('Programme / Filière')
-                    ->relationship('program', 'name')
-                    ->searchable()
-                    ->preload(),
 
 
 
@@ -164,10 +159,6 @@ class ExamScheduleResource extends Resource
                     ->placeholder('Toutes'),
 
 
-
-                Tables\Columns\TextColumn::make('program.name')
-                    ->label('Programme / Filière')
-                    ->placeholder('Toutes'),
 
 
 

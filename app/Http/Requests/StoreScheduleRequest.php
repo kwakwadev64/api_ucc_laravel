@@ -28,12 +28,6 @@ class StoreScheduleRequest extends FormRequest
             ],
 
 
-            'promotion_id' => [
-                'nullable',
-                'exists:promotions,id'
-            ],
-
-
             'program_id' => [
                 'nullable',
                 'exists:programs,id'
