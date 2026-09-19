@@ -7,6 +7,8 @@ use App\Http\Controllers\Auth\RegisterOptionController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\ArchiveController;
 use App\Http\Controllers\Api\ScheduleController;
+use App\Http\Controllers\Api\AcademicCalendarController;
+
 
 use App\Http\Controllers\site\PhotoFamilleController;
 use App\Http\Controllers\site\AuthController;
@@ -174,6 +176,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('archives')->group(function () {
     Route::get('/', [ArchiveController::class, 'index']);
     Route::get('/{archive}', [ArchiveController::class, 'show']);
+});
+
+ /*
+    |--------------------------------------------------------------------------
+     Calendrier academique
+    |--------------------------------------------------------------------------
+    */
+
+Route::prefix('academic-calendars')->group(function () {
+    Route::get('/', [AcademicCalendarController::class, 'index']);
+    Route::get('/{academicCalendar}', [AcademicCalendarController::class, 'show']);
 });
 
 
