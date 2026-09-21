@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Auth\RegisterOptionController;
+use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\ArchiveController;
 use App\Http\Controllers\Api\ScheduleController;
@@ -39,6 +40,12 @@ Route::get('/galerie-site', [PhotoFamilleController::class, 'index']);
 Route::get('/actualites/{id}', [NewsController::class, 'show']);
 Route::get('/equipes-site', [\App\Http\Controllers\site\EquipeController::class, 'index']);
 
+// Chatbot public : informations UCC publiées uniquement.
+Route::post(
+    '/public/chatbot/message',
+    [ChatbotController::class, 'publicMessage']
+)->middleware('throttle:5,1');
+
 //Routes protégées
 
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -54,39 +61,30 @@ Route::middleware(['auth:sanctum'])->group(function () {
         [CourseController::class, 'index']
     );
 
-
     Route::get(
         '/courses/{course}',
         [CourseController::class, 'show']
     );
-
 
     Route::post(
         '/courses',
         [CourseController::class, 'store']
     );
 
-
     Route::put(
         '/courses/{course}',
         [CourseController::class, 'update']
     );
-
 
     Route::delete(
         '/courses/{course}',
         [CourseController::class, 'destroy']
     );
 
-
     Route::get(
         '/courses/{course}/download',
         [CourseController::class, 'download']
     );
-
-
-
-
 
     /*
     |--------------------------------------------------------------------------
@@ -96,12 +94,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::prefix('course-schedules')->group(function () {
 
-
         Route::get(
             '/',
             [ScheduleController::class, 'indexCourses']
         );
-
 
         Route::post(
             '/',
@@ -109,11 +105,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         );
 
     });
-
-
-
-
-
 
     /*
     |--------------------------------------------------------------------------
@@ -123,12 +114,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::prefix('exam-schedules')->group(function () {
 
-
         Route::get(
             '/',
             [ScheduleController::class, 'indexExams']
         );
-
 
         Route::post(
             '/',
@@ -136,11 +125,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         );
 
     });
-
-
-
-
-
 
     /*
     |--------------------------------------------------------------------------
@@ -153,12 +137,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         [ScheduleController::class, 'show']
     );
 
-
     Route::put(
         '/schedules/{schedule}',
         [ScheduleController::class, 'update']
     );
-
 
     Route::delete(
         '/schedules/{schedule}',
@@ -191,4 +173,11 @@ Route::prefix('academic-calendars')->group(function () {
 
 
 
+    // Chatbot étudiant : contexte limité aux données accessibles à l'étudiant connecté.
+    Route::post(
+    '/chatbot/message',
+    [ChatbotController::class, 'studentMessage']
+)->middleware('throttle:10,1');
 });
+
+
