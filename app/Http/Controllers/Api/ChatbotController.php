@@ -23,9 +23,12 @@ class ChatbotController extends Controller
         GeminiService $gemini
     ): JsonResponse {
         try {
+            $message = $request->string('message')->trim()->toString();
             $answer = $gemini->askPublic(
-                $request->string('message')->trim()->toString(),
-                $contextService->build()
+                $message,
+                method_exists($contextService, 'buildForQuestion')
+                    ? $contextService->buildForQuestion($message)
+                    : $contextService->build()
             );
 
             return $this->success($answer['message']);

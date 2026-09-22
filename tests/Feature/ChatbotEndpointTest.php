@@ -30,6 +30,11 @@ class ChatbotEndpointTest extends TestCase
             {
                 return 'Contexte public de test.';
             }
+
+            public function buildForQuestion(string $question): string
+            {
+                return $this->build();
+            }
         });
 
         $this->app->instance(GeminiService::class, new class extends GeminiService

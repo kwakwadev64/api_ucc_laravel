@@ -12,4 +12,9 @@ class PublicChatbotContextService
     {
         return $this->officialWebsiteContextService->build();
     }
+
+    public function buildForQuestion(string $question): string
+    {
+        return $this->officialWebsiteContextService->build($question);
+    }
 }

@@ -20,11 +20,18 @@ class OfficialWebsiteContextService
         'https://www.fsiucc.com/galerie',
     ];
 
-    public function build(): string
+    public function build(string $question = ''): string
     {
         $sources = collect(config('chatbot.official_sources', []))
             ->filter(fn (array $source) => $this->isAllowedSource($source))
-            ->map(fn (array $source) => $this->sourceContext($source))
+            ->map(fn (array $source) => [
+                'score' => $this->sourceScore($source, $question),
+                'context' => $this->sourceContext($source),
+            ])
+            ->filter()
+            ->sortByDesc('score')
+            ->take($this->maxSources())
+            ->pluck('context')
             ->filter()
             ->values();
 
@@ -32,7 +39,11 @@ class OfficialWebsiteContextService
             throw new RuntimeException('Les sources officielles du chatbot sont indisponibles.');
         }
 
-        return $sources->implode("\n\n");
+        return Str::limit(
+            $sources->implode("\n\n"),
+            $this->maxContextCharacters(),
+            '…'
+        );
     }
 
     private function sourceContext(array $source): ?string
@@ -101,6 +112,36 @@ class OfficialWebsiteContextService
         $url = $source['url'] ?? null;
 
         return is_string($url) && in_array($url, self::OFFICIAL_URLS, true);
+    }
+
+    private function sourceScore(array $source, string $question): int
+    {
+        $terms = preg_split('/[^\p{L}\p{N}]+/u', Str::lower($question), -1, PREG_SPLIT_NO_EMPTY);
+        $keywords = collect($source['keywords'] ?? [])
+            ->map(fn (string $keyword) => Str::lower($keyword));
+        $haystack = Str::lower(($source['label'] ?? '').' '.($source['url'] ?? ''));
+
+        return collect($terms ?: [])
+            ->filter(fn (string $term) => Str::length($term) >= 4)
+            ->sum(function (string $term) use ($haystack, $keywords): int {
+                if (Str::contains($haystack, $term)) {
+                    return 3;
+                }
+
+                return $keywords->contains(
+                    fn (string $keyword) => Str::contains($keyword, $term)
+                ) ? 5 : 0;
+            });
+    }
+
+    private function maxSources(): int
+    {
+        return max(1, (int) config('chatbot.max_sources', 3));
+    }
+
+    private function maxContextCharacters(): int
+    {
+        return max(1000, (int) config('chatbot.max_context_characters', 18000));
     }
 
     private function cacheSeconds(): int
