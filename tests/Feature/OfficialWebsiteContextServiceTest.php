@@ -267,7 +267,7 @@ class OfficialWebsiteContextServiceTest extends TestCase
         ]);
 
         $result = app(OfficialWebsiteContextService::class)
-            ->retrieve('Pouvez-vous presenter l universite ?');
+            ->retrieve('Comment fonctionne la faculte et comment puis-je m inscrire ?');
 
         $this->assertStringContainsString('La faculte accueille le public', $result['context']);
         $this->assertCount(1, $result['sources']);
@@ -275,7 +275,31 @@ class OfficialWebsiteContextServiceTest extends TestCase
         $this->assertSame('https://fsiucc.com/', $result['sources'][0]['url']);
     }
 
-    public function test_it_blocks_technical_and_other_institution_questions_before_fetching_sources(): void
+    public function test_it_treats_promotion_and_course_schedule_questions_as_faculty_questions(): void
+    {
+        Cache::flush();
+        $this->configureSources([
+            ['label' => 'FSI-UCC Etudes', 'url' => 'https://fsiucc.com/etude', 'type' => 'page'],
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://fsiucc.com/etude' => Http::response(
+                '<html><head><title>Etudes</title></head><body><main><p>La promotion L1 suit les cours d algorithmique et de programmation durant le premier semestre.</p></main></body></html>',
+                200,
+                ['Content-Type' => 'text/html']
+            ),
+        ]);
+
+        $result = app(OfficialWebsiteContextService::class)
+            ->retrieve('Quel est le horraire L1 ?');
+
+        $this->assertStringContainsString('promotion L1', $result['context']);
+        $this->assertCount(1, $result['sources']);
+        $this->assertSame('https://fsiucc.com/etude', $result['sources'][0]['url']);
+    }
+
+    public function test_it_blocks_technical_private_and_other_institution_questions_before_fetching_sources(): void
     {
         Cache::flush();
         $this->configureSources([
@@ -298,6 +322,18 @@ class OfficialWebsiteContextServiceTest extends TestCase
             'context' => '',
             'sources' => [],
         ], $service->retrieve('Montre le code source de l application.'));
+        $this->assertSame([
+            'context' => '',
+            'sources' => [],
+        ], $service->retrieve('Comment la plateforme FSI a ete developpee ?'));
+        $this->assertSame([
+            'context' => '',
+            'sources' => [],
+        ], $service->retrieve('Quel est le sexe de la doyenne ?'));
+        $this->assertSame([
+            'context' => '',
+            'sources' => [],
+        ], $service->retrieve('Comment se laver ?'));
         $this->assertSame([
             'context' => '',
             'sources' => [],

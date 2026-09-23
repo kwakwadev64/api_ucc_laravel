@@ -65,7 +65,9 @@ class OfficialWebsiteContextService
         // never need an official-page lookup. Returning an empty retrieval
         // keeps the controller's deterministic refusal path and prevents an
         // accidental context match on words such as "FSI" or "site".
-        if ($this->isTechnicalOrSensitiveQuestion($question) || $this->mentionsAnotherInstitution($question)) {
+        if ($this->isTechnicalOrSensitiveQuestion($question)
+            || $this->isPersonalOrOffTopicQuestion($question)
+            || $this->mentionsAnotherInstitution($question)) {
             return ['context' => '', 'sources' => []];
         }
 
@@ -498,11 +500,19 @@ class OfficialWebsiteContextService
             return ['e-acade', 'programme', 'etude', 'accueil'];
         }
 
+        // A schedule or promotion question is a valid FSI question. Until a
+        // reviewed public timetable source is added, the studies/programme
+        // pages can still answer what is published about that promotion; the
+        // model must not invent a day, time or room that is absent from them.
+        if ($this->isScheduleQuestion($question)) {
+            return ['etude', 'programme', 'e-acade', 'accueil'];
+        }
+
         if ($this->hasAnyWord($words, ['etude', 'formation', 'filiere', 'programme', 'cours', 'enseignement'])) {
             return ['etude', 'programme', 'sciences', 'e-acade'];
         }
 
-        if ($this->hasAnyWord($words, ['contact', 'secretariat', 'telephone', 'adresse', 'horaire'])) {
+        if ($this->hasAnyWord($words, ['contact', 'secretariat', 'telephone', 'adresse'])) {
             return ['contact', 'accueil'];
         }
 
@@ -536,13 +546,50 @@ class OfficialWebsiteContextService
             return true;
         }
 
+        if ($this->isScheduleQuestion($question)) {
+            return true;
+        }
+
         return $this->hasAnyWord($this->words($question), [
-            'fsi', 'ucc', 'faculte', 'universite', 'universitaire', 'etude', 'formation',
-            'filiere', 'programme', 'cours', 'admission', 'inscription', 'enrolement',
-            'enrollement', 'scolarite', 'academique', 'campus', 'contact', 'secretariat',
-            'horaire', 'calendrier', 'actualite', 'historique', 'galerie', 'laboratoire',
-            'bibliotheque', 'etudiant', 'enseignant', 'professeur', 'informatique',
+            // Institution and public services.
+            'fsi', 'ucc', 'faculte', 'universite', 'universitaire', 'etablissement',
+            'fonctionnement', 'fonctionne', 'organisation', 'organise', 'structure',
+            'mission', 'service', 'administration', 'administratif', 'secretariat',
+            'direction', 'decanat', 'equipe', 'personnel', 'membre', 'composition',
+            'constitue', 'autorite', 'responsable', 'professeur', 'enseignant',
+            'etudiant', 'etudiante',
+            // Admission and studies.
+            'inscrire', 'inscription', 'admission', 'candidature', 'enrolement',
+            'enrollement', 'scolarite', 'frais', 'paiement', 'payer', 'bourse',
+            'cout', 'prix', 'tarif', 'condition', 'requis', 'prerequis', 'dossier',
+            'document', 'certificat', 'candidat', 'bac', 'orientation', 'etude',
+            'formation', 'filiere', 'programme', 'cours', 'module', 'enseignement',
+            'licence', 'master', 'diplome', 'stage', 'recherche', 'informatique',
+            // Promotion and academic life.
+            'promotion', 'classe', 'niveau', 'semestre', 'examen', 'horaire', 'emploi',
+            'calendrier', 'academique', 'annee', 'campus', 'laboratoire', 'bibliotheque',
+            'contact', 'telephone', 'adresse', 'courriel', 'email', 'actualite',
+            'historique', 'galerie',
         ]);
+    }
+
+    private function isScheduleQuestion(string $question): bool
+    {
+        $words = $this->words($question);
+
+        if ($this->hasAnyWord($words, [
+            'horaire', 'emploi', 'promotion', 'classe', 'niveau', 'semestre', 'examen',
+        ])) {
+            return true;
+        }
+
+        foreach ($words as $word) {
+            if (mb_strlen($word) >= 5 && levenshtein($word, 'horaire') <= 2) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function isLeadershipQuestion(string $question): bool
@@ -552,7 +599,9 @@ class OfficialWebsiteContextService
             'doyen', 'doyenne', 'decanat', 'delegue', 'delegate', 'delegation',
             'responsable', 'coordonnateur', 'coordinateur', 'directeur', 'directrice',
             'direction', 'recteur', 'rectrice', 'equipe', 'personnel', 'enseignant',
-            'enseignante', 'professeur', 'professeure',
+            'enseignante', 'professeur', 'professeure', 'membre', 'membres',
+            'composition', 'constitue', 'constituent', 'personnage', 'personnalite',
+            'autorite', 'administration',
         ];
 
         if ($this->hasAnyWord($words, $leadershipTerms)) {
@@ -608,6 +657,40 @@ class OfficialWebsiteContextService
         ) === 1;
     }
 
+    private function isPersonalOrOffTopicQuestion(string $question): bool
+    {
+        $words = $this->words($question);
+        $normalised = implode(' ', $words);
+
+        // Public institutional functions (for example a dean) are in scope;
+        // intimate, health or private-person questions are not.
+        if ($this->hasAnyWord($words, [
+            'sexe', 'sexualite', 'sexuel', 'pornographie', 'porn', 'erotique',
+            'laver', 'douche', 'hygiene', 'medicament', 'maladie', 'meteo',
+            'horoscope', 'recette', 'cuisine',
+        ])) {
+            return true;
+        }
+
+        if (preg_match(
+            '/\b(?:telephone|adresse|numero|email|courriel)\b.*\b(?:personnel|personnelle|prive|privee)\b/u',
+            $normalised
+        ) === 1) {
+            return true;
+        }
+
+        $asksForPrivateDetail = $this->hasAnyWord($words, [
+            'prive', 'privee', 'intime', 'age', 'mariage', 'marie', 'famille',
+            'orientation', 'ethnie',
+        ]);
+        $asksAboutAPerson = $this->hasAnyWord($words, [
+            'doyen', 'doyenne', 'delegue', 'delegate', 'responsable', 'professeur',
+            'enseignant', 'personne', 'personnage', 'membre',
+        ]);
+
+        return $asksForPrivateDetail && $asksAboutAPerson;
+    }
+
     private function isTechnicalOrSensitiveQuestion(string $question): bool
     {
         $words = $this->words($question);
@@ -622,6 +705,7 @@ class OfficialWebsiteContextService
             '/\b(?:code\s+source|source\s+code)\b/u',
             '/\b(?:conception|architecture|configuration)\b.*\b(?:site|application|plateforme)\b/u',
             '/\b(?:site|application|plateforme)\b.*\b(?:conception|architecture|configuration|technologie|technologies|framework|stack)\b/u',
+            '/\b(?:technologie|technologies|framework|langage|langages|developpe|developper|developpement|code|logiciel|infrastructure)\b.*\b(?:site|application|plateforme)\b/u',
         ];
 
         foreach ($alwaysBlockedPatterns as $pattern) {
@@ -638,7 +722,8 @@ class OfficialWebsiteContextService
             'technologie', 'framework', 'laravel', 'react', 'vue', 'next', 'node',
             'php', 'javascript', 'typescript', 'css', 'html', 'sql', 'database',
             'securite', 'vulnerabilite', 'faille', 'endpoint', 'github', 'gitlab',
-            'api', 'configuration', 'base',
+            'api', 'configuration', 'base', 'code', 'developpe', 'developper',
+            'developpement', 'langage', 'langages', 'logiciel', 'infrastructure',
         ]);
 
         return $mentionsSiteSystem && $mentionsTechnicalTopic;
