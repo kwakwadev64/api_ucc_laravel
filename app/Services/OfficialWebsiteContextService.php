@@ -22,7 +22,7 @@ use Throwable;
  */
 class OfficialWebsiteContextService
 {
-    private const CACHE_KEY = 'chatbot:official-corpus:v6';
+    private const CACHE_KEY = 'chatbot:official-corpus:v7';
 
     /**
      * Backwards-compatible shortcut for callers that only need the prompt text.
@@ -61,6 +61,14 @@ class OfficialWebsiteContextService
      */
     public function retrieve(string $question): array
     {
+        // Requests about the application itself, its infrastructure or secrets
+        // never need an official-page lookup. Returning an empty retrieval
+        // keeps the controller's deterministic refusal path and prevents an
+        // accidental context match on words such as "FSI" or "site".
+        if ($this->isTechnicalOrSensitiveQuestion($question) || $this->mentionsAnotherInstitution($question)) {
+            return ['context' => '', 'sources' => []];
+        }
+
         $documents = $this->documents();
 
         if ($documents === []) {
@@ -338,12 +346,44 @@ class OfficialWebsiteContextService
      */
     private function relevantChunks(array $documents, string $question): array
     {
-        $terms = $this->keywords($question);
-
-        if ($terms === []) {
+        if (!$this->isInstitutionalQuestion($question)) {
             return [];
         }
 
+        // Names and public functions are often represented differently in the
+        // feed (for example "Délégué Facultaire" versus "délégué(e)"). For
+        // those legitimate institutional questions, give Gemini the trusted
+        // Team document rather than rejecting a spelling variant before the
+        // model can read the official entry.
+        if ($this->isLeadershipQuestion($question)) {
+            $leadershipChunks = $this->leadershipChunks($documents);
+
+            if ($leadershipChunks !== []) {
+                return $leadershipChunks;
+            }
+        }
+
+        $terms = $this->keywords($question);
+
+        $chunks = $terms === [] ? [] : $this->rankedChunks($documents, $terms);
+
+        if ($chunks !== []) {
+            return $chunks;
+        }
+
+        // A broad but clearly institutional question may use words absent from
+        // a page. Fall back only to selected already-crawled official pages;
+        // Gemini is still required to refuse a fact that is not in that text.
+        return $this->institutionalFallbackChunks($documents, $question);
+    }
+
+    /**
+     * @param list<array{label: string, title: string, url: string, text: string}> $documents
+     * @param list<string> $terms
+     * @return list<array{label: string, url: string, text: string, score: int}>
+     */
+    private function rankedChunks(array $documents, array $terms): array
+    {
         $chunks = [];
 
         foreach ($documents as $document) {
@@ -374,6 +414,234 @@ class OfficialWebsiteContextService
             0,
             $this->integerConfig('chatbot.max_context_chunks', 6, 1, 10)
         );
+    }
+
+    /**
+     * @param list<array{label: string, title: string, url: string, text: string}> $documents
+     * @return list<array{label: string, url: string, text: string, score: int}>
+     */
+    private function leadershipChunks(array $documents): array
+    {
+        // The Team feed is the source of record for public roles. Keep its
+        // complete (already size-limited) text together so a name near the end
+        // of the list is not discarded by a lexical-ranking cutoff.
+        foreach ($documents as $document) {
+            if ($this->documentHintScore($document, ['equipe']) > 0) {
+                return [[
+                    'label' => $document['label'],
+                    'url' => $document['url'],
+                    'text' => $document['text'],
+                    'score' => 100,
+                ]];
+            }
+        }
+
+        foreach ($documents as $document) {
+            if ($this->documentHintScore($document, ['delegue', 'direction', 'decanat']) > 0) {
+                return [[
+                    'label' => $document['label'],
+                    'url' => $document['url'],
+                    'text' => $document['text'],
+                    'score' => 90,
+                ]];
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * @param list<array{label: string, title: string, url: string, text: string}> $documents
+     * @return list<array{label: string, url: string, text: string, score: int}>
+     */
+    private function institutionalFallbackChunks(array $documents, string $question): array
+    {
+        $hints = $this->institutionalSourceHints($question);
+        $chunks = [];
+
+        foreach ($documents as $document) {
+            $score = $this->documentHintScore($document, $hints);
+
+            if ($score === 0) {
+                continue;
+            }
+
+            foreach ($this->chunks($document['text']) as $text) {
+                $chunks[] = [
+                    'label' => $document['label'],
+                    'url' => $document['url'],
+                    'text' => $text,
+                    'score' => $score,
+                ];
+            }
+        }
+
+        usort($chunks, fn (array $left, array $right): int => $right['score'] <=> $left['score']);
+
+        return array_slice(
+            $chunks,
+            0,
+            $this->integerConfig('chatbot.max_context_chunks', 6, 1, 10)
+        );
+    }
+
+    /** @return list<string> */
+    private function institutionalSourceHints(string $question): array
+    {
+        $words = $this->words($question);
+
+        if ($this->isLeadershipQuestion($question)) {
+            return ['equipe', 'delegue', 'direction', 'decanat'];
+        }
+
+        if ($this->hasAnyWord($words, ['admission', 'inscription', 'enrolement', 'enrollement', 'candidature'])) {
+            return ['e-acade', 'programme', 'etude', 'accueil'];
+        }
+
+        if ($this->hasAnyWord($words, ['etude', 'formation', 'filiere', 'programme', 'cours', 'enseignement'])) {
+            return ['etude', 'programme', 'sciences', 'e-acade'];
+        }
+
+        if ($this->hasAnyWord($words, ['contact', 'secretariat', 'telephone', 'adresse', 'horaire'])) {
+            return ['contact', 'accueil'];
+        }
+
+        return ['accueil', 'fsi', 'ucc'];
+    }
+
+    /**
+     * @param array{label: string, title: string, url: string, text: string} $document
+     * @param list<string> $hints
+     */
+    private function documentHintScore(array $document, array $hints): int
+    {
+        $documentWords = $this->words($document['label'].' '.$document['title']);
+        $score = 0;
+
+        foreach ($hints as $hint) {
+            foreach ($documentWords as $word) {
+                if ($this->wordsMatch($hint, $word)) {
+                    $score += 10;
+                    break;
+                }
+            }
+        }
+
+        return $score;
+    }
+
+    private function isInstitutionalQuestion(string $question): bool
+    {
+        if ($this->isLeadershipQuestion($question)) {
+            return true;
+        }
+
+        return $this->hasAnyWord($this->words($question), [
+            'fsi', 'ucc', 'faculte', 'universite', 'universitaire', 'etude', 'formation',
+            'filiere', 'programme', 'cours', 'admission', 'inscription', 'enrolement',
+            'enrollement', 'scolarite', 'academique', 'campus', 'contact', 'secretariat',
+            'horaire', 'calendrier', 'actualite', 'historique', 'galerie', 'laboratoire',
+            'bibliotheque', 'etudiant', 'enseignant', 'professeur', 'informatique',
+        ]);
+    }
+
+    private function isLeadershipQuestion(string $question): bool
+    {
+        $words = $this->words($question);
+        $leadershipTerms = [
+            'doyen', 'doyenne', 'decanat', 'delegue', 'delegate', 'delegation',
+            'responsable', 'coordonnateur', 'coordinateur', 'directeur', 'directrice',
+            'direction', 'recteur', 'rectrice', 'equipe', 'personnel', 'enseignant',
+            'enseignante', 'professeur', 'professeure',
+        ];
+
+        if ($this->hasAnyWord($words, $leadershipTerms)) {
+            return true;
+        }
+
+        // Only tolerate small typos around the public functions that are
+        // commonly asked for. Broad fuzzy matching would make off-topic
+        // questions look relevant.
+        foreach ($words as $word) {
+            if (mb_strlen($word) < 5) {
+                continue;
+            }
+
+            foreach (['delegue', 'doyenne', 'doyen'] as $reference) {
+                if (levenshtein($word, $reference) <= 2) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /** @param list<string> $words @param list<string> $needles */
+    private function hasAnyWord(array $words, array $needles): bool
+    {
+        foreach ($needles as $needle) {
+            foreach ($words as $word) {
+                if ($this->wordsMatch($needle, $word)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function mentionsAnotherInstitution(string $question): bool
+    {
+        $normalised = implode(' ', $this->words($question));
+
+        if (str_contains($normalised, 'fsi')
+            || str_contains($normalised, 'ucc')
+            || str_contains($normalised, 'universite catholique du congo')
+            || str_contains($normalised, 'faculte des sciences informatiques')) {
+            return false;
+        }
+
+        return preg_match(
+            '/\b(?:universite|university|faculte|ecole|institut|college)\s+(?:de|du|des)?\s*[a-z]{3,}\b/u',
+            $normalised
+        ) === 1;
+    }
+
+    private function isTechnicalOrSensitiveQuestion(string $question): bool
+    {
+        $words = $this->words($question);
+        $normalised = implode(' ', $words);
+
+        $alwaysBlockedPatterns = [
+            '/\b(?:variable|variables)\b.*\b(?:env|environnement)\b/u',
+            '/\b(?:fichier|file)\b.*\benv\b/u',
+            '/\b(?:cle|key|token|secret)\b.*\bapi\b/u',
+            '/\bapi\b.*\b(?:cle|key|token|secret)\b/u',
+            '/\bmot\s+de\s+passe\b|\bpassword\b/u',
+            '/\b(?:code\s+source|source\s+code)\b/u',
+            '/\b(?:conception|architecture|configuration)\b.*\b(?:site|application|plateforme)\b/u',
+            '/\b(?:site|application|plateforme)\b.*\b(?:conception|architecture|configuration|technologie|technologies|framework|stack)\b/u',
+        ];
+
+        foreach ($alwaysBlockedPatterns as $pattern) {
+            if (preg_match($pattern, $normalised) === 1) {
+                return true;
+            }
+        }
+
+        $mentionsSiteSystem = $this->hasAnyWord($words, [
+            'site', 'application', 'plateforme', 'backend', 'frontend', 'serveur',
+            'hebergement', 'deploiement', 'repository', 'depot',
+        ]);
+        $mentionsTechnicalTopic = $this->hasAnyWord($words, [
+            'technologie', 'framework', 'laravel', 'react', 'vue', 'next', 'node',
+            'php', 'javascript', 'typescript', 'css', 'html', 'sql', 'database',
+            'securite', 'vulnerabilite', 'faille', 'endpoint', 'github', 'gitlab',
+            'api', 'configuration', 'base',
+        ]);
+
+        return $mentionsSiteSystem && $mentionsTechnicalTopic;
     }
 
     /** @return list<string> */

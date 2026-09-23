@@ -44,10 +44,14 @@ return [
             'label' => 'FSI-UCC — Plan du site',
             'url' => 'https://fsiucc.com/sitemap.xml',
             'type' => 'sitemap',
-            // One sitemap request plus its six explicit public routes.
-            'max_pages' => 7,
-            'allowed_paths' => ['/', '/etude', '/equipe', '/historique', '/galerie', '/contact'],
+            // One sitemap request plus its seven explicit public routes.
+            'max_pages' => 8,
+            'allowed_paths' => ['/', '/etude', '/equipe', '/historique', '/galerie', '/contact', '/delegue'],
         ],
+
+        // Dedicated public page for the faculty delegation. The Team feed
+        // remains the primary source for current public functions.
+        ['label' => 'FSI-UCC — Délégation', 'url' => 'https://fsiucc.com/delegue', 'type' => 'page', 'max_pages' => 1],
 
         // Do not crawl the broad UCC sitemap: it contains unrelated and stale
         // pages. The faculty page is deliberately an explicit source.

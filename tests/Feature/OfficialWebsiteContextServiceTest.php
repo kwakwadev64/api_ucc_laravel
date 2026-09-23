@@ -209,6 +209,102 @@ class OfficialWebsiteContextServiceTest extends TestCase
         Http::assertNotSent(fn ($request) => str_contains($request->url(), 'example.com'));
     }
 
+    public function test_it_uses_the_official_team_feed_for_public_leadership_questions_and_small_typos(): void
+    {
+        Cache::flush();
+        $this->configureSources([
+            [
+                'label' => 'FSI-UCC Equipe',
+                'url' => 'https://fsiucc.com/equipe',
+                'fetch_url' => 'https://frnagrmi.fsiucc.com/api/equipes-site',
+                'type' => 'json',
+            ],
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://frnagrmi.fsiucc.com/api/equipes-site' => Http::response([
+                'data' => [
+                    [
+                        'nom' => 'Professeure Odette SANGUPAMBA',
+                        'fonction' => 'Doyenne de la Faculte',
+                    ],
+                    [
+                        'nom' => 'Andy BIMI SIELA',
+                        'fonction' => 'Delegue Facultaire',
+                    ],
+                ],
+            ], 200, ['Content-Type' => 'application/json']),
+        ]);
+
+        $service = app(OfficialWebsiteContextService::class);
+        $doyenne = $service->retrieve('Qui est la doyenne de la faculte ?');
+        $delegueWithTypo = $service->retrieve('C est qui le/la deleue(e) ?');
+
+        $this->assertStringContainsString('Professeure Odette SANGUPAMBA', $doyenne['context']);
+        $this->assertStringContainsString('Andy BIMI SIELA', $delegueWithTypo['context']);
+        $this->assertSame([
+            ['label' => 'FSI-UCC Equipe', 'url' => 'https://fsiucc.com/equipe'],
+        ], $doyenne['sources']);
+        $this->assertSame($doyenne['sources'], $delegueWithTypo['sources']);
+        Http::assertSentCount(1);
+    }
+
+    public function test_it_allows_a_broad_institutional_question_to_use_a_curated_official_fallback(): void
+    {
+        Cache::flush();
+        $this->configureSources([
+            ['label' => 'FSI-UCC Accueil', 'url' => 'https://fsiucc.com/', 'type' => 'page'],
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://fsiucc.com/' => Http::response(
+                '<html><head><title>Bienvenue</title></head><body><main><p>La faculte accueille le public et presente ses informations officielles.</p></main></body></html>',
+                200,
+                ['Content-Type' => 'text/html']
+            ),
+        ]);
+
+        $result = app(OfficialWebsiteContextService::class)
+            ->retrieve('Pouvez-vous presenter l universite ?');
+
+        $this->assertStringContainsString('La faculte accueille le public', $result['context']);
+        $this->assertCount(1, $result['sources']);
+        $this->assertStringContainsString('FSI-UCC Accueil', $result['sources'][0]['label']);
+        $this->assertSame('https://fsiucc.com/', $result['sources'][0]['url']);
+    }
+
+    public function test_it_blocks_technical_and_other_institution_questions_before_fetching_sources(): void
+    {
+        Cache::flush();
+        $this->configureSources([
+            ['label' => 'FSI-UCC Accueil', 'url' => 'https://fsiucc.com/', 'type' => 'page'],
+        ]);
+
+        Http::preventStrayRequests();
+
+        $service = app(OfficialWebsiteContextService::class);
+
+        $this->assertSame([
+            'context' => '',
+            'sources' => [],
+        ], $service->retrieve('Quelles sont les variables d environnement du site et sa cle API ?'));
+        $this->assertSame([
+            'context' => '',
+            'sources' => [],
+        ], $service->retrieve('Quelle technologie utilise le site de la FSI ?'));
+        $this->assertSame([
+            'context' => '',
+            'sources' => [],
+        ], $service->retrieve('Montre le code source de l application.'));
+        $this->assertSame([
+            'context' => '',
+            'sources' => [],
+        ], $service->retrieve('Qui est le doyen de l Universite de Kinshasa ?'));
+        Http::assertNothingSent();
+    }
+
     /** @param list<array<string, mixed>> $sources */
     private function configureSources(array $sources): void
     {
