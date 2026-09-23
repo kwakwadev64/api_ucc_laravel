@@ -465,10 +465,7 @@ class OfficialWebsiteContextService
             $score += $textMatches === [] ? 0 : 1;
         }
 
-        // A multi-part question needs evidence for at least two distinct
-        // concepts. Otherwise a random single word in an old news item could
-        // make the model answer a question the source does not establish.
-        return $matchedTerms < min(2, count($terms)) ? 0 : $score;
+        return $matchedTerms === 0 ? 0 : $score;
     }
 
     private function wordsMatch(string $left, string $right): bool

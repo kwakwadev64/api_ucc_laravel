@@ -82,6 +82,30 @@ class OfficialWebsiteContextServiceTest extends TestCase
         Http::assertSentCount(1);
     }
 
+    public function test_it_keeps_a_relevant_chunk_when_only_one_question_concept_matches(): void
+    {
+        Cache::flush();
+        $this->configureSources([
+            ['label' => 'FSI-UCC — Études', 'url' => 'https://fsiucc.com/etude', 'type' => 'page'],
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://fsiucc.com/etude' => Http::response(
+                '<html><head><title>Études FSI-UCC</title></head><body><main><p>La faculté présente ses programmes de formation.</p></main></body></html>',
+                200,
+                ['Content-Type' => 'text/html']
+            ),
+        ]);
+
+        $result = app(OfficialWebsiteContextService::class)->retrieve('Pouvez-vous parler des programmes disponibles ?');
+
+        $this->assertStringContainsString('programmes de formation', $result['context']);
+        $this->assertSame([
+            ['label' => 'FSI-UCC — Études — Études FSI-UCC', 'url' => 'https://fsiucc.com/etude'],
+        ], $result['sources']);
+    }
+
     public function test_it_only_follows_allowed_urls_from_the_configured_sitemap(): void
     {
         Cache::flush();
