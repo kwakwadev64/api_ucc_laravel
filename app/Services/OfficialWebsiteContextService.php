@@ -61,16 +61,6 @@ class OfficialWebsiteContextService
      */
     public function retrieve(string $question): array
     {
-        // Requests about the application itself, its infrastructure or secrets
-        // never need an official-page lookup. Returning an empty retrieval
-        // keeps the controller's deterministic refusal path and prevents an
-        // accidental context match on words such as "FSI" or "site".
-        if ($this->isTechnicalOrSensitiveQuestion($question)
-            || $this->isPersonalOrOffTopicQuestion($question)
-            || $this->mentionsAnotherInstitution($question)) {
-            return ['context' => '', 'sources' => []];
-        }
-
         $documents = $this->documents();
 
         if ($documents === []) {
@@ -369,14 +359,36 @@ class OfficialWebsiteContextService
             return $chunks;
         }
 
-        if (!$this->isInstitutionalQuestion($question)) {
-            return [];
+        // Do not reject a question only because its wording does not match the
+        // local keyword list. Let Gemini inspect the approved corpus and refuse
+        // only when the requested fact is absent from those official sources.
+        return $this->corpusFallbackChunks($documents);
+    }
+
+    /**
+     * @param list<array{label: string, title: string, url: string, text: string}> $documents
+     * @return list<array{label: string, url: string, text: string, score: int}>
+     */
+    private function corpusFallbackChunks(array $documents): array
+    {
+        $chunks = [];
+
+        foreach ($documents as $document) {
+            foreach ($this->chunks($document['text']) as $text) {
+                $chunks[] = [
+                    'label' => $document['label'],
+                    'url' => $document['url'],
+                    'text' => $text,
+                    'score' => 0,
+                ];
+            }
         }
 
-        // A broad but clearly institutional question may use words absent from
-        // a page. Fall back only to selected already-crawled official pages;
-        // Gemini is still required to refuse a fact that is not in that text.
-        return $this->institutionalFallbackChunks($documents, $question);
+        return array_slice(
+            $chunks,
+            0,
+            $this->integerConfig('chatbot.max_context_chunks', 6, 1, 10)
+        );
     }
 
     /**

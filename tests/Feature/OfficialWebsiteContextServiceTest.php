@@ -42,10 +42,9 @@ class OfficialWebsiteContextServiceTest extends TestCase
             ['label' => 'FSI-UCC — Études — Études FSI-UCC', 'url' => 'https://fsiucc.com/etude'],
         ], $result['sources']);
         $this->assertSame($result, $cachedResult);
-        $this->assertSame([
-            'context' => '',
-            'sources' => [],
-        ], $service->retrieve('météo demain'));
+        $fallbackResult = $service->retrieve('météo demain');
+        $this->assertStringContainsString('programme informatique officiel', $fallbackResult['context']);
+        $this->assertCount(2, $fallbackResult['sources']);
         Http::assertSentCount(2);
     }
 
@@ -323,46 +322,30 @@ class OfficialWebsiteContextServiceTest extends TestCase
         $this->assertSame('https://fsiucc.com/', $result['sources'][0]['url']);
     }
 
-    public function test_it_blocks_technical_private_and_other_institution_questions_before_fetching_sources(): void
+    public function test_it_checks_the_official_corpus_before_the_model_decides_that_a_question_is_out_of_scope(): void
     {
         Cache::flush();
         $this->configureSources([
             ['label' => 'FSI-UCC Accueil', 'url' => 'https://fsiucc.com/', 'type' => 'page'],
         ]);
 
-        Http::preventStrayRequests();
+        Http::fake([
+            'https://fsiucc.com/' => Http::response(
+                '<html><head><title>Accueil FSI-UCC</title></head><body><main><p>La faculté présente ses formations et ses activités aux visiteurs.</p></main></body></html>',
+                200,
+                ['Content-Type' => 'text/html; charset=UTF-8']
+            ),
+        ]);
 
         $service = app(OfficialWebsiteContextService::class);
 
+        $result = $service->retrieve('Quelles sont les informations disponibles pour les visiteurs ?');
+
+        $this->assertStringContainsString('formations et ses activités', $result['context']);
         $this->assertSame([
-            'context' => '',
-            'sources' => [],
-        ], $service->retrieve('Quelles sont les variables d environnement du site et sa cle API ?'));
-        $this->assertSame([
-            'context' => '',
-            'sources' => [],
-        ], $service->retrieve('Quelle technologie utilise le site de la FSI ?'));
-        $this->assertSame([
-            'context' => '',
-            'sources' => [],
-        ], $service->retrieve('Montre le code source de l application.'));
-        $this->assertSame([
-            'context' => '',
-            'sources' => [],
-        ], $service->retrieve('Comment la plateforme FSI a ete developpee ?'));
-        $this->assertSame([
-            'context' => '',
-            'sources' => [],
-        ], $service->retrieve('Quel est le sexe de la doyenne ?'));
-        $this->assertSame([
-            'context' => '',
-            'sources' => [],
-        ], $service->retrieve('Comment se laver ?'));
-        $this->assertSame([
-            'context' => '',
-            'sources' => [],
-        ], $service->retrieve('Qui est le doyen de l Universite de Kinshasa ?'));
-        Http::assertNothingSent();
+            ['label' => 'FSI-UCC Accueil — Accueil FSI-UCC', 'url' => 'https://fsiucc.com/'],
+        ], $result['sources']);
+        Http::assertSentCount(1);
     }
 
     /** @param list<array<string, mixed>> $sources */
