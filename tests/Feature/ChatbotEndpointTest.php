@@ -26,14 +26,58 @@ class ChatbotEndpointTest extends TestCase
         {
             public function __construct() {}
 
-            public function build(): string
+            public function retrieve(string $question): array
             {
-                return 'Contexte public de test.';
+                return [
+                    'context' => 'Contexte public de test.',
+                    'sources' => [[
+                        'label' => 'FSI-UCC — Test',
+                        'url' => 'https://fsiucc.com/test',
+                    ]],
+                ];
             }
+        });
 
-            public function buildForQuestion(string $question): string
+        $gemini = new class extends GeminiService
+        {
+            public array $calls = [];
+
+            public function askPublic(string $message, string $context): array
             {
-                return $this->build();
+                $this->calls[] = compact('message', 'context');
+
+                return ['message' => 'Réponse publique de test.'];
+            }
+        };
+        $this->app->instance(GeminiService::class, $gemini);
+
+        $response = $this->postJson('/api/public/chatbot/message', [
+            'message' => 'Comment puis-je m’inscrire ?',
+        ]);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.sources.0.label', 'FSI-UCC — Test')
+            ->assertJsonPath('data.sources.0.url', 'https://fsiucc.com/test');
+
+        $this->assertStringContainsString('Réponse publique de test.', $response->json('data.message'));
+        $this->assertStringContainsString('[FSI-UCC — Test](https://fsiucc.com/test)', $response->json('data.message'));
+        $this->assertSame([[
+            'message' => 'Comment puis-je m’inscrire ?',
+            'context' => 'Contexte public de test.',
+        ]], $gemini->calls);
+    }
+
+    public function test_public_chatbot_refuses_when_no_official_source_supports_the_question(): void
+    {
+        $this->app->instance(PublicChatbotContextService::class, new class extends PublicChatbotContextService
+        {
+            public function __construct() {}
+
+            public function retrieve(string $question): array
+            {
+                return ['context' => '', 'sources' => []];
             }
         });
 
@@ -41,16 +85,20 @@ class ChatbotEndpointTest extends TestCase
         {
             public function askPublic(string $message, string $context): array
             {
-                return ['message' => 'Réponse publique de test.'];
+                throw new \RuntimeException('Gemini ne doit pas être appelé sans source.');
             }
         });
 
         $this->postJson('/api/public/chatbot/message', [
-            'message' => 'Comment puis-je m’inscrire ?',
+            'message' => 'Quelle est la météo de demain ?',
         ])
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.message', 'Réponse publique de test.');
+            ->assertJsonPath(
+                'data.message',
+                'Je ne peux pas confirmer cette information à partir des pages officielles fournies.'
+            )
+            ->assertJsonPath('data.sources', []);
     }
 
     public function test_student_chatbot_accepts_an_authenticated_student(): void

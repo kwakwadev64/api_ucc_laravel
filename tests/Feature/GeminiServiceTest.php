@@ -41,7 +41,11 @@ class GeminiServiceTest extends TestCase
             return $request->url() === 'https://generativelanguage.googleapis.com/v1beta/interactions'
                 && $request->hasHeader('x-goog-api-key', 'public-test-key')
                 && $request['store'] === false
-                && $request['model'] === config('services.gemini.model');
+                && $request['model'] === config('services.gemini.model')
+                && str_contains($request['input'], 'CONTEXTE AUTORISÉ :'."\n".'Contexte public de test.')
+                && str_contains($request['input'], 'QUESTION :'."\n".'Comment puis-je m’inscrire ?')
+                && str_contains($request['system_instruction'], 'Tu ne disposes d’aucun outil de navigation.')
+                && !str_contains($request['system_instruction'], 'Wikipédia');
         });
     }
 }

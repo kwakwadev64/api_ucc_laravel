@@ -17,21 +17,32 @@ use Throwable;
 
 class ChatbotController extends Controller
 {
+    private const PUBLIC_NO_CONFIRMATION = 'Je ne peux pas confirmer cette information à partir des pages officielles fournies.';
+
     public function publicMessage(
         SendPublicChatbotMessageRequest $request,
         PublicChatbotContextService $contextService,
         GeminiService $gemini
     ): JsonResponse {
         try {
-            $message = $request->string('message')->trim()->toString();
+            $question = $request->string('message')->trim()->toString();
+            $retrieval = $contextService->retrieve($question);
+
+            // Do not call the model unless an official, relevant source was
+            // found. This makes the mandatory refusal deterministic.
+            if ($retrieval['context'] === '' || $retrieval['sources'] === []) {
+                return $this->success(self::PUBLIC_NO_CONFIRMATION);
+            }
+
             $answer = $gemini->askPublic(
-                $message,
-                method_exists($contextService, 'buildForQuestion')
-                    ? $contextService->buildForQuestion($message)
-                    : $contextService->build()
+                $question,
+                $retrieval['context']
             );
 
-            return $this->success($answer['message']);
+            return $this->success(
+                $this->withOfficialSources($answer['message'], $retrieval['sources']),
+                $retrieval['sources']
+            );
         } catch (Throwable $exception) {
             return $this->error($exception, 'public');
         }
@@ -54,14 +65,51 @@ class ChatbotController extends Controller
         }
     }
 
-    private function success(string $message): JsonResponse
+    /**
+     * @param list<array{label: string, url: string}> $sources
+     */
+    private function success(string $message, array $sources = []): JsonResponse
     {
         return response()->json([
             'success' => true,
             'data' => [
                 'message' => $message,
+                'sources' => $sources,
             ],
         ]);
+    }
+
+    /**
+     * The model never chooses citations. The backend appends the exact,
+     * allowlisted sources used to build its context.
+     *
+     * @param list<array{label: string, url: string}> $sources
+     */
+    private function withOfficialSources(string $message, array $sources): string
+    {
+        $message = trim($message);
+
+        if ($message === self::PUBLIC_NO_CONFIRMATION) {
+            return $message;
+        }
+
+        $lines = [];
+
+        foreach ($sources as $source) {
+            $label = trim((string) ($source['label'] ?? ''));
+            $url = trim((string) ($source['url'] ?? ''));
+
+            if ($label === '' || filter_var($url, FILTER_VALIDATE_URL) === false) {
+                continue;
+            }
+
+            $label = str_replace(['[', ']'], ['\\[', '\\]'], $label);
+            $lines[$url] = sprintf('- [%s](%s)', $label, $url);
+        }
+
+        return $lines === []
+            ? $message
+            : $message."\n\n**Sources officielles :**\n".implode("\n", array_values($lines));
     }
 
     private function error(Throwable $exception, string $audience): JsonResponse
@@ -74,6 +122,7 @@ class ChatbotController extends Controller
             'audience' => $audience,
             'exception' => $exception::class,
             'provider_status' => $status,
+            'exception_message' => $exception->getMessage(),
         ]);
 
         if ($status === 429) {

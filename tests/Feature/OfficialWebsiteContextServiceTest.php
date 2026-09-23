@@ -9,66 +9,199 @@ use Tests\TestCase;
 
 class OfficialWebsiteContextServiceTest extends TestCase
 {
-    public function test_it_uses_only_the_configured_official_sources_and_caches_them(): void
+    public function test_it_selects_only_relevant_official_content_and_caches_the_corpus(): void
     {
         Cache::flush();
-
-        config()->set('chatbot.source_cache_seconds', 3600);
-        config()->set('chatbot.max_source_characters', 1000);
+        $this->configureSources([
+            ['label' => 'FSI-UCC — Études', 'url' => 'https://www.fsiucc.com/etude', 'type' => 'page'],
+            ['label' => 'FSI-UCC — Contact', 'url' => 'https://fsiucc.com/contact', 'type' => 'page'],
+        ]);
 
         Http::preventStrayRequests();
         Http::fake([
-            'https://www.fsiucc.com/' => Http::response(
-                '<html><body><h1>Accueil FSI</h1><script>ignore-moi</script><p>Information officielle.</p></body></html>'
+            'https://fsiucc.com/etude' => Http::response(
+                '<html><head><title>Études FSI-UCC</title></head><body><main><script>ignore-moi</script><h1>Programme informatique</h1><p>Le programme informatique officiel présente les unités d’enseignement de la faculté.</p></main></body></html>',
+                200,
+                ['Content-Type' => 'text/html; charset=UTF-8']
             ),
-            'https://www.fsiucc.com/etude' => Http::response(
-                '<html><body><h1>Études</h1><p>Programme officiel.</p></body></html>'
-            ),
-            'https://www.fsiucc.com/equipe' => Http::response(
-                '<html><body><h1>Équipe</h1><p>Équipe officielle.</p></body></html>'
-            ),
-            'https://www.fsiucc.com/historique' => Http::response(
-                '<html><body><h1>Historique</h1><p>Historique officiel.</p></body></html>'
-            ),
-            'https://www.fsiucc.com/galerie' => Http::response(
-                '<html><body><h1>Galerie</h1><p>Galerie officielle.</p></body></html>'
+            'https://fsiucc.com/contact' => Http::response(
+                '<html><head><title>Contact</title></head><body><main><h1>Contact</h1><p>Le secrétariat répond aux demandes générales de contact de la faculté.</p></main></body></html>',
+                200,
+                ['Content-Type' => 'text/html; charset=UTF-8']
             ),
         ]);
 
         $service = app(OfficialWebsiteContextService::class);
-        $context = $service->build();
-        $cachedContext = $service->build();
+        $result = $service->retrieve('Quel programme informatique est proposé ?');
+        $cachedResult = $service->retrieve('Quel programme informatique est proposé ?');
 
-        $this->assertStringContainsString('Accueil FSI Information officielle.', $context);
-        $this->assertStringNotContainsString('ignore-moi', $context);
-        $this->assertSame($context, $cachedContext);
-        Http::assertSentCount(5);
+        $this->assertStringContainsString('Le programme informatique officiel', $result['context']);
+        $this->assertStringNotContainsString('ignore-moi', $result['context']);
+        $this->assertStringNotContainsString('secrétariat', $result['context']);
+        $this->assertSame([
+            ['label' => 'FSI-UCC — Études — Études FSI-UCC', 'url' => 'https://fsiucc.com/etude'],
+        ], $result['sources']);
+        $this->assertSame($result, $cachedResult);
+        $this->assertSame([
+            'context' => '',
+            'sources' => [],
+        ], $service->retrieve('météo demain'));
+        Http::assertSentCount(2);
     }
 
-    public function test_it_rejects_sources_outside_the_five_official_urls(): void
+    public function test_it_uses_a_public_data_feed_but_cites_the_public_fsi_page(): void
     {
         Cache::flush();
-
-        config()->set('chatbot.official_sources', [
+        $this->configureSources([
             [
-                'label' => 'Accueil FSI-UCC',
-                'url' => 'https://www.fsiucc.com/',
-            ],
-            [
-                'label' => 'Source non autorisée',
-                'url' => 'https://example.com/not-allowed',
+                'label' => 'FSI-UCC — Équipe',
+                'url' => 'https://fsiucc.com/equipe',
+                'fetch_url' => 'https://frnagrmi.fsiucc.com/api/equipes-site',
+                'type' => 'json',
             ],
         ]);
 
         Http::preventStrayRequests();
         Http::fake([
-            'https://www.fsiucc.com/' => Http::response('<html><body>Source autorisée.</body></html>'),
+            'https://frnagrmi.fsiucc.com/api/equipes-site' => Http::response([
+                'data' => [[
+                    'nom' => 'Professeur Test',
+                    'fonction' => 'Coordonnateur informatique',
+                ]],
+            ], 200, ['Content-Type' => 'application/json']),
         ]);
 
-        $context = app(OfficialWebsiteContextService::class)->build();
+        $result = app(OfficialWebsiteContextService::class)
+            ->retrieve('Qui est le coordonnateur informatique ?');
 
-        $this->assertStringContainsString('Source autorisée.', $context);
-        $this->assertStringNotContainsString('Source non autorisée', $context);
+        $this->assertStringContainsString('Coordonnateur informatique', $result['context']);
+        $this->assertStringNotContainsString('frnagrmi.fsiucc.com', $result['context']);
+        $this->assertSame([
+            ['label' => 'FSI-UCC — Équipe', 'url' => 'https://fsiucc.com/equipe'],
+        ], $result['sources']);
         Http::assertSentCount(1);
+    }
+
+    public function test_it_only_follows_allowed_urls_from_the_configured_sitemap(): void
+    {
+        Cache::flush();
+        $this->configureSources([
+            [
+                'label' => 'FSI-UCC — Plan du site',
+                'url' => 'https://fsiucc.com/sitemap.xml',
+                'type' => 'sitemap',
+                'max_pages' => 2,
+                'allowed_paths' => ['/etude'],
+            ],
+            ['label' => 'Source extérieure', 'url' => 'https://example.com/not-allowed', 'type' => 'page'],
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://fsiucc.com/sitemap.xml' => Http::response(
+                '<?xml version="1.0"?><urlset><url><loc>https://fsiucc.com/etude</loc></url><url><loc>https://fsiucc.com/contact</loc></url><url><loc>https://fsiucc.com/etude?visitor=1</loc></url><url><loc>https://example.com/evil</loc></url></urlset>',
+                200,
+                ['Content-Type' => 'application/xml']
+            ),
+            'https://fsiucc.com/etude' => Http::response(
+                '<html><head><title>Études</title></head><body><main><p>Le programme informatique officiel est présenté sur cette page.</p></main></body></html>',
+                200,
+                ['Content-Type' => 'text/html']
+            ),
+        ]);
+
+        $result = app(OfficialWebsiteContextService::class)->retrieve('programme informatique');
+
+        $this->assertStringContainsString('programme informatique officiel', $result['context']);
+        $this->assertSame([
+            ['label' => 'FSI-UCC — Plan du site — Études', 'url' => 'https://fsiucc.com/etude'],
+        ], $result['sources']);
+        Http::assertSentCount(2);
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'example.com'));
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), '?visitor=1'));
+    }
+
+    public function test_it_accepts_only_a_canonical_equivalent_redirect(): void
+    {
+        Cache::flush();
+        $this->configureSources([
+            [
+                'label' => 'UCC — Sciences informatiques',
+                'url' => 'https://ucc.ovh/sciences-informatiques/',
+                'type' => 'page',
+            ],
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://ucc.ovh/sciences-informatiques' => Http::response(
+                '',
+                301,
+                ['Location' => '/sciences-informatiques/']
+            ),
+            'https://ucc.ovh/sciences-informatiques/' => Http::response(
+                '<html><head><title>Sciences informatiques</title></head><body><main><p>Les sciences informatiques sont présentées par l UCC.</p></main></body></html>',
+                200,
+                ['Content-Type' => 'text/html']
+            ),
+        ]);
+
+        $result = app(OfficialWebsiteContextService::class)->retrieve('sciences informatiques');
+
+        $this->assertSame([
+            ['label' => 'UCC — Sciences informatiques', 'url' => 'https://ucc.ovh/sciences-informatiques'],
+        ], $result['sources']);
+        Http::assertSentCount(2);
+    }
+
+    public function test_it_never_follows_a_redirect_to_a_different_url(): void
+    {
+        Cache::flush();
+        $this->configureSources([
+            ['label' => 'FSI-UCC — Études', 'url' => 'https://fsiucc.com/etude', 'type' => 'page'],
+            ['label' => 'Redirection refusée', 'url' => 'https://ucc.ovh/redirect', 'type' => 'page'],
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://fsiucc.com/etude' => Http::response(
+                '<html><body><main><p>Le programme informatique officiel est disponible.</p></main></body></html>',
+                200,
+                ['Content-Type' => 'text/html']
+            ),
+            'https://ucc.ovh/redirect' => Http::response(
+                '',
+                302,
+                ['Location' => 'https://example.com/not-allowed']
+            ),
+        ]);
+
+        $result = app(OfficialWebsiteContextService::class)->retrieve('programme informatique');
+
+        $this->assertSame([
+            ['label' => 'FSI-UCC — Études', 'url' => 'https://fsiucc.com/etude'],
+        ], $result['sources']);
+        Http::assertSentCount(2);
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), 'example.com'));
+    }
+
+    /** @param list<array<string, mixed>> $sources */
+    private function configureSources(array $sources): void
+    {
+        config()->set('chatbot.allowed_hosts', [
+            'fsiucc.com',
+            'frnagrmi.fsiucc.com',
+            'ucc.ovh',
+            'e-acade.ucc.ac.cd',
+        ]);
+        config()->set('chatbot.official_sources', $sources);
+        config()->set('chatbot.source_cache_seconds', 3600);
+        config()->set('chatbot.minimum_document_characters', 1);
+        config()->set('chatbot.max_source_characters', 1000);
+        config()->set('chatbot.max_context_chunks', 4);
+        config()->set('chatbot.max_context_characters', 4000);
+        config()->set('chatbot.max_chunk_characters', 1000);
+        config()->set('chatbot.crawl_max_pages', 4);
+        config()->set('chatbot.sitemap_max_urls', 6);
     }
 }
