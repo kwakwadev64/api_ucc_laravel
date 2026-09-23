@@ -299,6 +299,30 @@ class OfficialWebsiteContextServiceTest extends TestCase
         $this->assertSame('https://fsiucc.com/etude', $result['sources'][0]['url']);
     }
 
+    public function test_it_checks_the_official_corpus_before_rejecting_an_unlisted_but_matching_question(): void
+    {
+        Cache::flush();
+        $this->configureSources([
+            ['label' => 'FSI-UCC Accueil', 'url' => 'https://fsiucc.com/', 'type' => 'page'],
+        ]);
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://fsiucc.com/' => Http::response(
+                '<html><head><title>Bienvenue</title></head><body><main><p>Bienvenue aux visiteurs de la Faculte des Sciences Informatiques.</p></main></body></html>',
+                200,
+                ['Content-Type' => 'text/html']
+            ),
+        ]);
+
+        $result = app(OfficialWebsiteContextService::class)
+            ->retrieve('Quel message de bienvenue est publie ?');
+
+        $this->assertStringContainsString('Bienvenue aux visiteurs', $result['context']);
+        $this->assertCount(1, $result['sources']);
+        $this->assertSame('https://fsiucc.com/', $result['sources'][0]['url']);
+    }
+
     public function test_it_blocks_technical_private_and_other_institution_questions_before_fetching_sources(): void
     {
         Cache::flush();

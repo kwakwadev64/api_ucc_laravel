@@ -348,10 +348,6 @@ class OfficialWebsiteContextService
      */
     private function relevantChunks(array $documents, string $question): array
     {
-        if (!$this->isInstitutionalQuestion($question)) {
-            return [];
-        }
-
         // Names and public functions are often represented differently in the
         // feed (for example "Délégué Facultaire" versus "délégué(e)"). For
         // those legitimate institutional questions, give Gemini the trusted
@@ -371,6 +367,10 @@ class OfficialWebsiteContextService
 
         if ($chunks !== []) {
             return $chunks;
+        }
+
+        if (!$this->isInstitutionalQuestion($question)) {
+            return [];
         }
 
         // A broad but clearly institutional question may use words absent from
