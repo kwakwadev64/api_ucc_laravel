@@ -69,7 +69,7 @@ class ChatbotEndpointTest extends TestCase
         ]], $gemini->calls);
     }
 
-    public function test_public_chatbot_refuses_when_no_official_source_supports_the_question(): void
+    public function test_public_chatbot_still_answers_a_university_question_without_a_matching_source(): void
     {
         $this->app->instance(PublicChatbotContextService::class, new class extends PublicChatbotContextService
         {
@@ -81,24 +81,36 @@ class ChatbotEndpointTest extends TestCase
             }
         });
 
-        $this->app->instance(GeminiService::class, new class extends GeminiService
+        $gemini = new class extends GeminiService
         {
+            public array $calls = [];
+
             public function askPublic(string $message, string $context): array
             {
-                throw new \RuntimeException('Gemini ne doit pas être appelé sans source.');
-            }
-        });
+                $this->calls[] = compact('message', 'context');
 
-        $this->postJson('/api/public/chatbot/message', [
-            'message' => 'Quelle est la météo de demain ?',
-        ])
+                return ['message' => 'Connectez-vous à votre compte e-Acadé pour consulter vos résultats.'];
+            }
+        };
+        $this->app->instance(GeminiService::class, $gemini);
+
+        $response = $this->postJson('/api/public/chatbot/message', [
+            'message' => 'Comment vérifier mes points à la FSI-UCC ?',
+        ]);
+
+        $response
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonPath(
-                'data.message',
-                'Je ne peux pas confirmer cette information à partir des pages officielles fournies.'
-            )
             ->assertJsonPath('data.sources', []);
+
+        $this->assertSame(
+            'Connectez-vous à votre compte e-Acadé pour consulter vos résultats.',
+            $response->json('data.message')
+        );
+        $this->assertSame([[
+            'message' => 'Comment vérifier mes points à la FSI-UCC ?',
+            'context' => '',
+        ]], $gemini->calls);
     }
 
     public function test_student_chatbot_accepts_an_authenticated_student(): void

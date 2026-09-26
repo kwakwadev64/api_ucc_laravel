@@ -28,12 +28,6 @@ class ChatbotController extends Controller
             $question = $request->string('message')->trim()->toString();
             $retrieval = $contextService->retrieve($question);
 
-            // Do not call the model unless an official, relevant source was
-            // found. This makes the mandatory refusal deterministic.
-            if ($retrieval['context'] === '' || $retrieval['sources'] === []) {
-                return $this->success(self::PUBLIC_NO_CONFIRMATION);
-            }
-
             $answer = $gemini->askPublic(
                 $question,
                 $retrieval['context']
