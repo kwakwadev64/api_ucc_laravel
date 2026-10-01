@@ -2,11 +2,14 @@
 
 return [
     'paths' => [
+        'api/actualites',
+        'api/actualites/*',
+        'api/accueil-site',
         'api/public/chatbot/*',
         'api/chatbot/*',
     ],
 
-    'allowed_methods' => ['POST', 'OPTIONS'],
+    'allowed_methods' => ['GET', 'POST', 'OPTIONS'],
 
     'allowed_origins' => [
         'https://fsiucc.com',

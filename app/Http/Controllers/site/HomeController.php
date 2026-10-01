@@ -7,10 +7,10 @@ use Illuminate\Http\Request;
 
 class HomeController extends Controller
 {
-    //renvoyer les données de la page d'accueil du site web(le 3 dernières actualités, nombre de cours, nombre de photo de famille, nombre des bats d'examen)
+    // Renvoyer toutes les actualités et les compteurs de la page d'accueil.
     public function getHomeData()
     {
-        $actualites = \App\Models\Actualite::orderBy('created_at', 'desc')->take(3)->get();
+        $actualites = \App\Models\Actualite::orderBy('created_at', 'desc')->get();
         $coursCount = \App\Models\Course::count();
         $photosCount = \App\Models\PhotoFamille::count();
         $batsCount = \App\Models\Schedule::count();
