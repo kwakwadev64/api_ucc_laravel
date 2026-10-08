@@ -9,6 +9,9 @@ use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\ArchiveController;
 use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Api\AcademicCalendarController;
+use App\Http\Controllers\Api\AcademicResultController;
+use App\Http\Controllers\Api\RecoursController;
+use App\Http\Controllers\Api\TutorialController;
 
 
 use App\Http\Controllers\site\PhotoFamilleController;
@@ -30,6 +33,9 @@ Route::get(
 // Route publique pour se connecter
 Route::post('/login-site', [AuthController::class, 'login']);
 
+
+Route::get('/tutorials', [TutorialController::class, 'index']);
+Route::get('/tutorials/{tutorial}', [TutorialController::class, 'show']);
 // Routes protégées par Sanctum
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -161,6 +167,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/', [ArchiveController::class, 'index']);
     Route::get('/{archive}', [ArchiveController::class, 'show']);
 });
+
+
+Route::post('/academic-results/check', [AcademicResultController::class, 'check']);
+
+
+
+ Route::get('/recours', [RecoursController::class, 'index']);
+Route::post('/recours', [RecoursController::class, 'store']);
+
+Route::get('/recours/{recours}', [RecoursController::class, 'show']);
+
 
  /*
     |--------------------------------------------------------------------------

@@ -2,10 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\Faculty;
-use App\Models\Promotion;
-use App\Models\AcademicYear;
+
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -22,6 +19,7 @@ class DatabaseSeeder extends Seeder
             StudentSeeder::class,
             SuperAdminSeeder::class,
             ClearSchedulesSeeder::class,
+            AppealReasonSeeder::class
         ]);
 
 

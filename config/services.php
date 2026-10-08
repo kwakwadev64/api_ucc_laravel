@@ -2,7 +2,7 @@
 
 return [
 
-   
+
 
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
@@ -39,5 +39,9 @@ return [
             'api_key' => env('GEMINI_STUDENT_API_KEY'),
         ],
     ],
+
+    'youtube' => [
+    'api_key' => env('YOUTUBE_API_KEY'),
+],
 
 ];
