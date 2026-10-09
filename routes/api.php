@@ -173,7 +173,9 @@ Route::post('/academic-results/check', [AcademicResultController::class, 'check'
 
 
 
- Route::get('/recours', [RecoursController::class, 'index']);
+ Route::get('/recours/options', [RecoursController::class, 'options']);
+Route::get('/recours/{recours}/attachments/{attachment}', [RecoursController::class, 'download']);
+Route::get('/recours', [RecoursController::class, 'index']);
 Route::post('/recours', [RecoursController::class, 'store']);
 
 Route::get('/recours/{recours}', [RecoursController::class, 'show']);
