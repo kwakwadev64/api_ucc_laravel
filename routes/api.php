@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\ArchiveController;
 use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Api\AcademicCalendarController;
 use App\Http\Controllers\Api\AcademicResultController;
+use App\Http\Controllers\Api\AppealReasonController;
 use App\Http\Controllers\Api\RecoursController;
 use App\Http\Controllers\Api\TutorialController;
 
@@ -171,6 +172,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 Route::post('/academic-results/check', [AcademicResultController::class, 'check']);
 
+Route::get('/appeal-reasons', [AppealReasonController::class, 'index']);
+
 
 
  Route::get('/recours/options', [RecoursController::class, 'options']);
@@ -200,4 +203,3 @@ Route::prefix('academic-calendars')->group(function () {
     [ChatbotController::class, 'studentMessage']
 )->middleware('throttle:10,1');
 });
-
