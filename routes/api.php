@@ -21,6 +21,7 @@ use App\Http\Controllers\site\PhotoController;
 use App\Http\Controllers\site\NewsController;
 use App\Http\Controllers\ActualiteController;
 
+use App\Http\Controllers\Auth\IdentifiantController;
 require __DIR__.'/auth.php';
 
 //Options inscription
@@ -29,6 +30,14 @@ Route::get(
     '/register-options',
     [RegisterOptionController::class, 'index']
 );
+
+
+//verifier l'identifiant
+Route::post('/verifier-identifiant', [
+    IdentifiantController::class,
+    'verifier',
+]);
+
 
 //Route pour le site web
 // Route publique pour se connecter

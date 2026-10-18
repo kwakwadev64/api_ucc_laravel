@@ -17,7 +17,7 @@ class RegisteredUserController extends Controller
      */
     public function store(RegisterUserRequest $request): JsonResponse
     {
-        $academicYearId = $request->academic_year_id 
+        $academicYearId = $request->academic_year_id
         ?? AcademicYear::where('status', 'active')->first()?->id;
 
         $user = User::create([
@@ -25,6 +25,7 @@ class RegisteredUserController extends Controller
             'last_name' => $request->last_name,
             'email' => $request->email,
             'phone' => $request->phone,
+            'matricule' => $request->matricule,
             'password' => $request->password,
             'role' => $request->role,
             'faculty_id' => $request->faculty_id,

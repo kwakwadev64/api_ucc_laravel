@@ -23,6 +23,12 @@ class RegisterUserRequest extends FormRequest
     {
         return [
 
+            'identifiant' => [
+            'required',
+            'string',
+            'exists:identifiants,code',
+        ],
+
             'first_name' => [
                 'required',
                 'string',
@@ -48,6 +54,12 @@ class RegisterUserRequest extends FormRequest
                 'max:20',
                 'unique:users,phone',
             ],
+            'matricule' => [
+                'nullable',
+                'string',
+                'max:20',
+                'unique:users,matricule',
+            ],
 
             'password' => [
                 'required',
@@ -59,7 +71,7 @@ class RegisterUserRequest extends FormRequest
                 'required',
                 'string',
                 'in:student,cp,teacher,faculty_admin,super_admin',
-                
+
             ],
 
             'faculty_id' => [
@@ -96,9 +108,14 @@ class RegisterUserRequest extends FormRequest
     public function messages(): array
     {
         return [
+
+            'identifiant.required' => 'Le code d’inscription est obligatoire.',
+            'identifiant.exists' => 'Le code d’inscription est invalide.',
             'email.unique' => 'Cette adresse email est déjà utilisée.',
 
             'phone.unique' => 'Ce numéro de téléphone est déjà utilisé.',
+
+            'matricule.unique' => 'Ce matricule est déjà utilisé.',
 
             'password.confirmed' => 'La confirmation du mot de passe ne correspond pas.',
 

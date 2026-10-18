@@ -19,7 +19,8 @@ class DatabaseSeeder extends Seeder
             StudentSeeder::class,
             SuperAdminSeeder::class,
             ClearSchedulesSeeder::class,
-            AppealReasonSeeder::class
+            AppealReasonSeeder::class,
+            IdentifiantSeeder::class
         ]);
 
 
