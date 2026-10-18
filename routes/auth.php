@@ -6,6 +6,8 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\Auth\ProfileController;
+use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\HomeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +40,9 @@ Route::middleware('auth:sanctum')->group(function () {
         ]);
     });
 
+    Route::post('/update-profile', [ProfileController::class, 'update']);
+
+    Route::post('/profile/password/update', [PasswordController::class, 'update']);
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');

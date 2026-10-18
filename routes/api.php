@@ -14,7 +14,6 @@ use App\Http\Controllers\Api\AppealReasonController;
 use App\Http\Controllers\Api\RecoursController;
 use App\Http\Controllers\Api\TutorialController;
 
-
 use App\Http\Controllers\site\PhotoFamilleController;
 use App\Http\Controllers\site\AuthController;
 use App\Http\Controllers\site\PhotoController;
@@ -203,6 +202,8 @@ Route::prefix('academic-calendars')->group(function () {
     Route::get('/', [AcademicCalendarController::class, 'index']);
     Route::get('/{academicCalendar}', [AcademicCalendarController::class, 'show']);
 });
+
+
 
 
 
