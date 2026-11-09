@@ -21,6 +21,8 @@ use App\Http\Controllers\site\NewsController;
 use App\Http\Controllers\ActualiteController;
 
 use App\Http\Controllers\Auth\IdentifiantController;
+use App\Http\Controllers\Api\PromotionRequestController;
+
 require __DIR__.'/auth.php';
 
 //Options inscription
@@ -36,7 +38,7 @@ Route::post('/verifier-identifiant', [
     IdentifiantController::class,
     'verifier',
 ]);
-
+ 
 
 //Route pour le site web
 // Route publique pour se connecter
@@ -66,6 +68,8 @@ Route::post(
 //Routes protégées
 
 Route::middleware(['auth:sanctum'])->group(function () {
+
+    Route::post('/promotion-requests', [PromotionRequestController::class, 'store']);
 
     /*
     |--------------------------------------------------------------------------
@@ -175,6 +179,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('archives')->group(function () {
     Route::get('/', [ArchiveController::class, 'index']);
     Route::get('/{archive}', [ArchiveController::class, 'show']);
+
+    
 });
 
 
