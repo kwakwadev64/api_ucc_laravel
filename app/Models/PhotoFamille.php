@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class PhotoFamille extends Model
 {
-    use HasFactory;
+    use HasFactory; 
 
     protected $fillable = [
         'title',
@@ -15,6 +15,7 @@ class PhotoFamille extends Model
         'faculte',
         'promotion',
         'image_path',
+        'academic_year_id',
         'is_active',
     ];
 
@@ -27,5 +28,10 @@ class PhotoFamille extends Model
             return $this->image_path;
         }
         return asset('storage/' . $this->image_path);
+    }
+
+    public function academicYear()
+    {
+        return $this->belongsTo(AcademicYear::class, 'academic_year_id');
     }
 }

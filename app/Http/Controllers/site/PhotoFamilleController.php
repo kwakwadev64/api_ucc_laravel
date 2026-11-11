@@ -4,14 +4,30 @@ namespace App\Http\Controllers\site;
 
 use App\Http\Controllers\Controller;
 use App\Models\PhotoFamille;
+use App\Models\AcademicYear;
 use Illuminate\Http\Request;
 
 class PhotoFamilleController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // 1. Récupérer les photos actives
-        $photos = PhotoFamille::where('is_active', true)->get();
+        // 1. Déterminer l'année académique (soit celle demandée, soit l'active par défaut)
+        $academicYearId = $request->input('academic_year_id');
+
+        if ($academicYearId) {
+            $currentYear = AcademicYear::find($academicYearId);
+        } else {
+            $currentYear = AcademicYear::where('status', 'active')->first();
+        }
+
+        // 2. Récupérer les photos actives en filtrant par année académique si elle existe
+        $query = PhotoFamille::where('is_active', true);
+
+        if ($currentYear) {
+            $query->where('academic_year_id', $currentYear->id);
+        }
+
+        $photos = $query->get();
 
         // Noms d'affichage selon la promotion
         $displayNames = [
@@ -24,7 +40,7 @@ class PhotoFamilleController extends Controller
             'M2 Conception' => 'Master 2 Conception',
         ];
 
-        // 2. Grouper par promotion et formater
+        // 3. Grouper par promotion et formater
         $albums = $photos->groupBy('promotion')->map(function ($groupPhotos, $promotionKey) use ($displayNames) {
             $first = $groupPhotos->first();
 
@@ -50,8 +66,13 @@ class PhotoFamilleController extends Controller
             ];
         })->values();
 
+        // 4. Récupérer la liste de toutes les années académiques pour les filtres du front-end
+        $academicYears = AcademicYear::orderBy('start_date', 'desc')->get();
+
         return response()->json([
             'success' => true,
+            'current_academic_year' => $currentYear,
+            'academic_years' => $academicYears,
             'data' => $albums
         ], 200);
     }
