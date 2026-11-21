@@ -20,6 +20,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Forms\Components\Textarea;
+  use Filament\Tables\Columns\ViewColumn;
 
 class ActualiteResource extends Resource
 {
@@ -41,34 +42,68 @@ class ActualiteResource extends Resource
                 ])->required(),
             TextInput::make('rating')->label('Note / Importance')->numeric()->default(5.0),
             Toggle::make('is_published')->label('Publié')->default(true),
-            FileUpload::make('image_url')->image()->directory('actualites')->required()->label('Image d\'illustration'),
+            FileUpload::make('image_url')
+                ->label('Photo ou vidéo')
+                ->acceptedFileTypes([
+                    'image/jpeg',
+                    'image/png',
+                    'image/webp',
+                    'image/jpg',
+                    'video/mp4',
+                ])
+                ->maxSize(51200) // 50 Mo
+                ->directory('actualites')
+                ->required()
+                ->preserveFilenames()
+                ->helperText('Formats acceptés : JPG, PNG, WEBP et MP4. Taille maximale : 50 Mo.'),
         ]);
     }
 
     
 
-    public static function table(Table $table): Table
-    {
-        return $table->columns([
-            ImageColumn::make('image_url')->label('Image'),
-            TextColumn::make('titre')->label('Titre')->searchable(),
-            TextColumn::make('description')->label('Description')->limit(70),
-            TextColumn::make('location')->label('Lieu'),
-            TextColumn::make('filter_type')->label('Filtre'),
-            IconColumn::make('is_published')->boolean()->label('En ligne'),
-        ])
-        ->filters([
-            //
-        ])
-        ->actions([
-            Tables\Actions\EditAction::make(),
-        ])
-        ->bulkActions([
-            Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make(),
-            ]),
-        ]);
-    }
+  
+
+public static function table(Table $table): Table
+{
+    return $table->columns([
+        Tables\Columns\TextColumn::make('image_url')
+    ->label('Média')
+    ->formatStateUsing(fn ($state) => $state ? basename($state) : 'Aucun média')
+    ->url(fn ($record) => $record->image_url
+        ? \Illuminate\Support\Facades\Storage::disk('public')->url($record->image_url)
+        : null)
+    ->openUrlInNewTab()
+    ->color('primary')
+    ->icon('heroicon-o-arrow-top-right-on-square'),
+
+        TextColumn::make('titre')
+            ->label('Titre')
+            ->searchable(),
+
+        TextColumn::make('description')
+            ->label('Description')
+            ->limit(70),
+
+        TextColumn::make('location')
+            ->label('Lieu'),
+
+        TextColumn::make('filter_type')
+            ->label('Filtre'),
+
+        IconColumn::make('is_published')
+            ->boolean()
+            ->label('En ligne'),
+    ])
+    ->filters([])
+    ->actions([
+        Tables\Actions\EditAction::make(),
+    ])
+    ->bulkActions([
+        Tables\Actions\BulkActionGroup::make([
+            Tables\Actions\DeleteBulkAction::make(),
+        ]),
+    ]);
+}
 
     public static function getRelations(): array
     {

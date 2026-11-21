@@ -14,8 +14,12 @@ class AcademicYear extends Model
         'start_date',
         'end_date',
         'status',
+        'recours_is_open',
     ];
 
+    protected $casts = [
+        'recours_is_open' => 'boolean',
+    ];
 
     /**
      * Promotions liées à cette année académique
@@ -24,6 +28,7 @@ class AcademicYear extends Model
     {
         return $this->hasMany(Promotion::class);
     }
+
     /**
      * Users liées à cette année académique
      */
@@ -31,7 +36,6 @@ class AcademicYear extends Model
     {
         return $this->hasMany(User::class);
     }
-
 
     /**
      * Cours liés à cette année académique
@@ -41,12 +45,24 @@ class AcademicYear extends Model
         return $this->hasMany(Course::class);
     }
 
-
     /**
- * Horaires de l'annee academqiue.
- */
+     * Horaires de l'année académique.
+     */
     public function schedules()
     {
         return $this->hasMany(Schedule::class, 'academic_year_id');
+    }
+
+    /**
+     * Photos de famille de cette année académique.
+     */
+    public function photoFamilles()
+    {
+        return $this->hasMany(PhotoFamille::class);
+    }
+
+    public function promotionRequests()
+    {
+        return $this->hasMany(PromotionRequest::class, 'academic_year_id');
     }
 }

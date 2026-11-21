@@ -34,9 +34,13 @@ class PromotionRequestResource extends Resource
                 Tables\Columns\TextColumn::make('targetPromotion.name')
                     ->label('Promotion Demandée'),
 
-                Tables\Columns\ImageColumn::make('proof_file')
+               Tables\Columns\ImageColumn::make('proof_file')
                     ->label('Preuve (Relevé)')
-                    ->disk('public'),
+                    ->disk('public')
+                    ->url(fn (PromotionRequest $record) =>
+                        Storage::disk('public')->url($record->proof_file)
+                    )
+                    ->openUrlInNewTab(),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Statut')

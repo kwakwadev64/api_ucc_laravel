@@ -121,4 +121,9 @@ class User extends Authenticatable implements FilamentUser, HasName
         'uploaded_by'
     );
 }
+
+public function promotionRequests()
+{
+    return $this->hasMany(PromotionRequest::class);
+}
 }

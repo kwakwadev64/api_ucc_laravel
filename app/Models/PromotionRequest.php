@@ -11,6 +11,7 @@ class PromotionRequest extends Model
 
     protected $fillable = [
         'user_id',
+        'academic_year_id',
         'current_promotion_id',
         'target_promotion_id',
         'proof_file',
@@ -21,6 +22,11 @@ class PromotionRequest extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function academicYear()
+    {
+        return $this->belongsTo(AcademicYear::class, 'academic_year_id');
     }
 
     public function currentPromotion()

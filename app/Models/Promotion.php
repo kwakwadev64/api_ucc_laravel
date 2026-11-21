@@ -47,4 +47,12 @@ class Promotion extends Model
     {
         return $this->hasMany(Schedule::class, 'promotion_id');
     }
+
+    /**
+ * Photos de famille de cette promotion.
+ */
+public function photoFamilles()
+{
+    return $this->hasMany(PhotoFamille::class);
+}
 }

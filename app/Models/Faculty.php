@@ -31,4 +31,9 @@ class Faculty extends Model
     {
         return $this->hasMany(Schedule::class, 'faculty_id');
     }
+
+    public function photoFamilles()
+{
+    return $this->hasMany(PhotoFamille::class);
+}
 }
