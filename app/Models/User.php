@@ -20,20 +20,22 @@ class User extends Authenticatable implements FilamentUser, HasName
     /**
      * Les champs autorisés en assignation massive
      */
-    protected $fillable = [
-        'first_name',
-        'last_name',
-        'email',
-        'phone',
-        'matricule',
-        'password',
-        'role',
-        'faculty_id',
-        'promotion_id',
-        'academic_year_id',
-        'profile_photo',
-        'is_active',
-    ];
+ protected $fillable = [
+    'first_name',
+    'last_name',
+    'email',
+    'google_id',
+    'facebook_id', // Ajout Facebook
+    'phone',
+    'matricule',
+    'password',
+    'role',
+    'faculty_id',
+    'promotion_id',
+    'academic_year_id',
+    'profile_photo',
+    'is_active',
+];
 
 
     /**

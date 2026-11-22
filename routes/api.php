@@ -22,6 +22,8 @@ use App\Http\Controllers\ActualiteController;
 
 use App\Http\Controllers\Auth\IdentifiantController;
 use App\Http\Controllers\Api\PromotionRequestController;
+use App\Http\Controllers\Api\GoogleAuthController;
+use App\Http\Controllers\Api\FacebookAuthController;
 
 require __DIR__.'/auth.php';
 
@@ -33,12 +35,31 @@ Route::get(
 );
 
 
+Route::post('/auth/google/exchange', [GoogleAuthController::class, 'exchange'])
+    ->middleware('throttle:10,1');
+
 //verifier l'identifiant
 Route::post('/verifier-identifiant', [
     IdentifiantController::class,
     'verifier',
 ]);
- 
+
+Route::post('/auth/google/complete-registration', [
+    GoogleAuthController::class,
+    'completeRegistration'
+])->middleware('throttle:5,1');
+
+
+
+
+Route::prefix('auth/facebook')->group(function () {
+    Route::post('/exchange', [FacebookAuthController::class, 'exchange']);
+
+    Route::post('/complete-registration', [
+        FacebookAuthController::class,
+        'completeRegistration'
+    ]);
+});
 
 //Route pour le site web
 // Route publique pour se connecter
@@ -180,7 +201,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/', [ArchiveController::class, 'index']);
     Route::get('/{archive}', [ArchiveController::class, 'show']);
 
-    
+
 });
 
 
