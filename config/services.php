@@ -2,8 +2,6 @@
 
 return [
 
-
-
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],
@@ -41,18 +39,21 @@ return [
     ],
 
     'youtube' => [
-    'api_key' => env('YOUTUBE_API_KEY'),
-],
+        'api_key' => env('YOUTUBE_API_KEY'),
+    ],
 
-'google' => [
-    'client_id' => env('GOOGLE_CLIENT_ID'),
-    'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-    'redirect' => env('GOOGLE_REDIRECT_URI'),
-],
+    'google' => [
+        'client_id'       => env('GOOGLE_CLIENT_ID'),
+        'client_secret'   => env('GOOGLE_CLIENT_SECRET'),
+        'redirect'        => env('GOOGLE_REDIRECT_URI'),
+        'mobile_redirect' => env('GOOGLE_MOBILE_REDIRECT', 'fsi-hub://auth/callback'),
+    ],
 
-'facebook' => [
-    'client_id'       => env('FACEBOOK_CLIENT_ID'),
-    'client_secret'   => env('FACEBOOK_CLIENT_SECRET'),
-    'redirect'        => env('FACEBOOK_REDIRECT_URI'),
-    'mobile_redirect' => env('FACEBOOK_MOBILE_REDIRECT', 'fsi-hub://auth/callback'),],
+    'facebook' => [
+        'client_id'       => env('FACEBOOK_CLIENT_ID'),
+        'client_secret'   => env('FACEBOOK_CLIENT_SECRET'),
+        'redirect'        => env('FACEBOOK_REDIRECT_URI'),
+        'mobile_redirect' => env('FACEBOOK_MOBILE_REDIRECT', 'fsi-hub://auth/callback'),
+    ],
+
 ];
