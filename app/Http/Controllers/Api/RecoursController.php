@@ -8,6 +8,7 @@ use App\Models\AppealReason;
 use App\Models\Course;
 use App\Models\Recours;
 use App\Models\RecoursAttachment;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,20 +19,41 @@ use Throwable;
 
 class RecoursController extends Controller
 {
+    /**
+     * Relations accessibles à l'étudiant.
+     * Seule la décision du jury est chargée.
+     */
     private const RELATIONS = [
         'academicYear',
         'promotion',
         'courses',
         'reasons',
         'attachments',
+        'juryReview:id,recours_id,decision',
     ];
 
+    /**
+     * Vérifie si l'étudiant possède un recours actif.
+     */
+    private function hasActiveRecours(int $userId): bool
+    {
+        return Recours::query()
+            ->where('user_id', $userId)
+            ->whereIn('status', ['submitted', 'under_review'])
+            ->exists();
+    }
+
+    /**
+     * OPTIONS DU FORMULAIRE
+     */
     public function options(Request $request): JsonResponse
     {
         $user = $request->user();
 
         abort_unless(
-            in_array($user->role, ['student', 'cp'], true) && $user->is_active,
+            $user &&
+            in_array($user->role, ['student', 'cp'], true) &&
+            $user->is_active,
             403
         );
 
@@ -44,7 +66,6 @@ class RecoursController extends Controller
             ], 422);
         }
 
-        // Vérification de l'ouverture de la période des recours
         if (! $user->academicYear->recours_is_open) {
             return response()->json([
                 'success' => false,
@@ -52,6 +73,8 @@ class RecoursController extends Controller
                 'message' => 'La période de soumission des recours est actuellement fermée. Veuillez revenir ultérieurement.',
             ], 403);
         }
+
+        $hasActiveRecours = $this->hasActiveRecours($user->id);
 
         $courses = Course::query()
             ->where('promotion_id', $user->promotion_id)
@@ -73,15 +96,19 @@ class RecoursController extends Controller
             'data' => [
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,
+
                 'promotion' => [
                     'id' => $user->promotion->id,
                     'name' => $user->promotion->name,
                 ],
+
                 'academic_year' => [
                     'id' => $user->academicYear->id,
                     'name' => $user->academicYear->name,
                 ],
+
                 'courses' => $courses,
+
                 'reasons' => AppealReason::query()
                     ->where('is_active', true)
                     ->orderBy('name')
@@ -92,39 +119,70 @@ class RecoursController extends Controller
                         'requires_description',
                         'requires_attachment',
                     ]),
+
+                'can_submit' => ! $hasActiveRecours,
+
+                'active_recours_message' => $hasActiveRecours
+                    ? 'Vous avez déjà un recours soumis ou en cours de traitement. Vous pourrez en soumettre un autre après la décision définitive.'
+                    : null,
             ],
         ]);
     }
 
+    /**
+     * HISTORIQUE DES RECOURS DE L'ÉTUDIANT CONNECTÉ
+     */
     public function index(Request $request): JsonResponse
     {
+        $userId = $request->user()->id;
+
+        $recours = Recours::query()
+            ->where('user_id', $userId)
+            ->with(self::RELATIONS)
+            ->latest()
+            ->get();
+
+        $hasActiveRecours = $this->hasActiveRecours($userId);
+
         return response()->json([
             'success' => true,
-            'data' => Recours::query()
-                ->where('user_id', $request->user()->id)
-                ->with(self::RELATIONS)
-                ->latest()
-                ->get()
-                ->map(fn (Recours $record) => $this->serialize($record)),
+
+            'can_submit' => ! $hasActiveRecours,
+
+            'message' => $hasActiveRecours
+                ? 'Vous avez déjà un recours en cours de traitement.'
+                : 'Vous pouvez soumettre un nouveau recours.',
+
+            'data' => $recours->map(
+                fn (Recours $record) => $this->serialize($record)
+            )->values(),
         ]);
     }
 
+    /**
+     * DÉTAIL D'UN RECOURS
+     */
     public function show(Request $request, Recours $recours): JsonResponse
     {
         $this->authorizeOwner($request, $recours);
 
+        $recours->load(self::RELATIONS);
+
         return response()->json([
             'success' => true,
-            'data' => $this->serialize($recours->load(self::RELATIONS)),
+            'data' => $this->serialize($recours),
         ]);
     }
 
+    /**
+     * SOUMISSION D'UN RECOURS
+     */
     public function store(StoreRecoursRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
-        // Deuxième vérification avant l'enregistrement
         $user = $request->user();
+
         $user->loadMissing('academicYear');
 
         if (! $user->academicYear?->recours_is_open) {
@@ -141,10 +199,30 @@ class RecoursController extends Controller
             $recours = DB::transaction(function () use (
                 $validated,
                 $request,
+                $user,
                 &$storedPaths
             ) {
+                /*
+                 * Verrouillage de la ligne utilisateur
+                 * pour éviter les doubles soumissions simultanées.
+                 */
+                User::query()
+                    ->whereKey($user->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                /*
+                 * Vérification des recours actifs.
+                 */
+                if ($this->hasActiveRecours($user->id)) {
+                    return null;
+                }
+
+                /*
+                 * Création du recours.
+                 */
                 $record = Recours::create([
-                    'user_id' => $request->user()->id,
+                    'user_id' => $user->id,
                     'academic_year_id' => $validated['academic_year_id'],
                     'promotion_id' => $validated['promotion_id'],
                     'last_name' => trim($validated['last_name']),
@@ -156,15 +234,23 @@ class RecoursController extends Controller
                     'submitted_at' => now(),
                 ]);
 
+                /*
+                 * Enregistrement des cours.
+                 */
                 foreach ($validated['courses'] as $course) {
                     $record->courses()->attach(
                         $course['course_id'],
                         [
-                            'professor_name' => trim($course['professor_name']),
+                            'professor_name' => trim(
+                                $course['professor_name']
+                            ),
                         ]
                     );
                 }
 
+                /*
+                 * Enregistrement des motifs.
+                 */
                 foreach ($validated['reasons'] as $reason) {
                     $record->reasons()->attach(
                         $reason['reason_id'],
@@ -174,6 +260,9 @@ class RecoursController extends Controller
                     );
                 }
 
+                /*
+                 * Enregistrement des pièces justificatives.
+                 */
                 foreach ($request->file('attachments', []) as $index => $file) {
                     $path = $file->store('recours-private', 'local');
 
@@ -197,6 +286,17 @@ class RecoursController extends Controller
                 return $record->load(self::RELATIONS);
             });
 
+            /*
+             * Un recours actif existe déjà.
+             */
+            if (! $recours) {
+                return response()->json([
+                    'success' => false,
+                    'code' => 'RECOURS_ALREADY_ACTIVE',
+                    'message' => 'Vous avez déjà un recours soumis ou en cours de traitement. Vous pourrez en soumettre un autre après la décision définitive.',
+                ], 409);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Recours enregistré avec succès.',
@@ -206,7 +306,8 @@ class RecoursController extends Controller
         } catch (Throwable $exception) {
             Storage::disk('local')->delete($storedPaths);
 
-            // Ne pas journaliser le formulaire ou les pièces de l'étudiant.
+            report($exception);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Votre recours n’a pas pu être enregistré. Veuillez réessayer.',
@@ -214,6 +315,9 @@ class RecoursController extends Controller
         }
     }
 
+    /**
+     * TÉLÉCHARGEMENT D'UNE PIÈCE JUSTIFICATIVE
+     */
     public function download(
         Request $request,
         Recours $recours,
@@ -226,7 +330,6 @@ class RecoursController extends Controller
             404
         );
 
-        // Compatibilité avec les anciennes pièces.
         $disk = str_starts_with(
             $attachment->file_path,
             'recours-private/'
@@ -255,6 +358,9 @@ class RecoursController extends Controller
         );
     }
 
+    /**
+     * VÉRIFICATION DU PROPRIÉTAIRE
+     */
     private function authorizeOwner(
         Request $request,
         Recours $recours
@@ -266,24 +372,80 @@ class RecoursController extends Controller
         );
     }
 
+    /**
+     * SÉRIALISATION DES DONNÉES VISIBLES PAR L'ÉTUDIANT
+     *
+     * Aucune information interne du jury n'est exposée.
+     */
     private function serialize(Recours $recours): array
     {
-        $data = $recours->toArray();
+        $decision = $recours->juryReview?->decision;
 
-        $data['attachments'] = $recours->attachments
-            ->map(fn (RecoursAttachment $attachment) => [
-                'id' => $attachment->id,
-                'reason_id' => $attachment->reason_id,
-                'original_name' => $attachment->original_name,
-                'mime_type' => $attachment->mime_type,
-                'size' => $attachment->size,
-                'download_path' => '/recours/' .
-                    $recours->id .
-                    '/attachments/' .
-                    $attachment->id,
-            ])
-            ->all();
+        $statusLabel = match ($recours->status) {
+            'draft' => 'Brouillon',
+            'submitted' => 'Soumis',
+            'under_review' => 'En attente',
+            'decided' => match ($decision) {
+                'founded' => 'Fondé',
+                'unfounded' => 'Non fondé',
+                default => 'Décidé',
+            },
+            default => 'Statut inconnu',
+        };
 
-        return $data;
+        return [
+            'id' => $recours->id,
+
+            'academic_year' => [
+                'id' => $recours->academicYear?->id,
+                'name' => $recours->academicYear?->name,
+            ],
+
+            'promotion' => [
+                'id' => $recours->promotion?->id,
+                'name' => $recours->promotion?->name,
+            ],
+
+            'student' => [
+                'last_name' => $recours->last_name,
+                'post_name' => $recours->post_name,
+                'first_name' => $recours->first_name,
+            ],
+
+            'status' => $recours->status,
+            'status_label' => $statusLabel,
+
+            'submitted_at' => $recours->submitted_at,
+
+            'courses' => $recours->courses
+                ->map(fn ($course) => [
+                    'id' => $course->id,
+                    'title' => $course->title,
+                    'professor_name' => $course->pivot->professor_name,
+                ])
+                ->values(),
+
+            'reasons' => $recours->reasons
+                ->map(fn ($reason) => [
+                    'id' => $reason->id,
+                    'name' => $reason->name,
+                    'description' => $reason->pivot->description,
+                ])
+                ->values(),
+
+            'attachments' => $recours->attachments
+                ->map(fn (RecoursAttachment $attachment) => [
+                    'id' => $attachment->id,
+                    'reason_id' => $attachment->reason_id,
+                    'original_name' => $attachment->original_name,
+                    'mime_type' => $attachment->mime_type,
+                    'size' => $attachment->size,
+                    'download_path' => '/recours/' .
+                        $recours->id .
+                        '/attachments/' .
+                        $attachment->id,
+                ])
+                ->values(),
+        ];
     }
 }
