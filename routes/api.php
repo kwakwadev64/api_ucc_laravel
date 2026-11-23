@@ -39,10 +39,8 @@ Route::post('/auth/google/exchange', [GoogleAuthController::class, 'exchange'])
     ->middleware('throttle:10,1');
 
 //verifier l'identifiant
-Route::post('/verifier-identifiant', [
-    IdentifiantController::class,
-    'verifier',
-]);
+Route::post('/verifier-identifiant', [IdentifiantController::class, 'verifier'])
+    ->middleware('throttle:10,1');
 
 Route::post('/auth/google/complete-registration', [
     GoogleAuthController::class,
@@ -53,12 +51,11 @@ Route::post('/auth/google/complete-registration', [
 
 
 Route::prefix('auth/facebook')->group(function () {
-    Route::post('/exchange', [FacebookAuthController::class, 'exchange']);
+    Route::post('/exchange', [FacebookAuthController::class, 'exchange'])
+        ->middleware('throttle:10,1');
 
-    Route::post('/complete-registration', [
-        FacebookAuthController::class,
-        'completeRegistration'
-    ]);
+    Route::post('/complete-registration', [FacebookAuthController::class, 'completeRegistration'])
+        ->middleware('throttle:5,1');
 });
 
 //Route pour le site web

@@ -190,13 +190,25 @@ public function completeRegistration(Request $request)
         ], 409);
     }
 
+    // 6. Prénom et nom de repli si Google ne les a pas fournis
+    $firstName = trim((string) ($googleData['first_name'] ?? ''));
+    $lastName  = trim((string) ($googleData['last_name'] ?? ''));
+
+    if ($firstName === '') {
+        $firstName = Str::before($googleData['email'], '@');
+    }
+
+    if ($lastName === '') {
+        $lastName = $firstName;
+    }
+
     try {
-        $user = DB::transaction(function () use ($validated, $googleData) {
+        $user = DB::transaction(function () use ($validated, $googleData, $firstName, $lastName) {
 
             // Création du compte étudiant
             $user = User::create([
-                'first_name' => $googleData['first_name'],
-                'last_name' => $googleData['last_name'],
+                'first_name' => $firstName,
+                'last_name' => $lastName,
                 'email' => $googleData['email'],
                 'google_id' => $googleData['google_id'],
 
