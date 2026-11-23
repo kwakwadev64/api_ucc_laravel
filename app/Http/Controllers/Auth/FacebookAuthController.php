@@ -2,89 +2,73 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Http\Controllers\Auth\Concerns\RedirectsToMobileApp;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\InvalidStateException;
 
 class FacebookAuthController extends Controller
 {
+    use RedirectsToMobileApp;
+
+    protected function mobileRedirectUrl(): string
+    {
+        return config('services.facebook.mobile_redirect');
+    }
+
     /**
      * Rediriger l'utilisateur vers Facebook.
      */
     public function redirect()
     {
-        return Socialite::driver('facebook')
-    ->with(['auth_type' => 'reauthenticate'])
-    ->redirect();
+        return Socialite::driver('facebook')->redirect();
     }
 
     /**
-     * Recevoir et traiter la réponse de Facebook.
+     * Recevoir la réponse de Facebook et ramener l'utilisateur vers l'app.
      */
-    public function callback()
+    public function callback(Request $request)
     {
-        try {
-            // Récupérer l'utilisateur authentifié auprès de Facebook.
-            $facebookUser = Socialite::driver('facebook')->user();
-
-            $email = $facebookUser->getEmail();
-
-            // Facebook peut ne pas fournir l'adresse email.
-            if (!$email) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Facebook n’a fourni aucune adresse email. Veuillez utiliser une autre méthode de connexion.',
-                ], 422);
-            }
-
-            // Récupérer les informations du profil.
-            $facebookData = [
-                'facebook_id' => $facebookUser->getId(),
-                'email' => $email,
-                'first_name' => $facebookUser->user['first_name'] ?? null,
-                'last_name' => $facebookUser->user['last_name'] ?? null,
-                'profile_photo' => $facebookUser->getAvatar(),
-            ];
-
-            // Générer un code temporaire aléatoire.
-            $code = Str::random(64);
-
-            // Stocker les données pendant 5 minutes.
-            Cache::put(
-                'facebook_oauth_code:' . hash('sha256', $code),
-                $facebookData,
-                now()->addMinutes(5)
-            );
-
-            // Retourner le code temporaire au client.
-            return response()->json([
-                'success' => true,
-                'message' => 'Authentification Facebook réussie. Vous pouvez poursuivre.',
-                'authorization_code' => $code,
-                'expires_in' => 300,
-                'facebook' => [
-                    'email' => $facebookData['email'],
-                    'first_name' => $facebookData['first_name'],
-                    'last_name' => $facebookData['last_name'],
-                    'profile_photo' => $facebookData['profile_photo'],
-                ],
-            ]);
-
-        } catch (\Throwable $e) {
-
-            report($e);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Impossible de récupérer les informations Facebook.',
-
-                'debug' => config('app.debug') ? [
-                    'exception' => get_class($e),
-                    'error' => $e->getMessage(),
-                ] : null,
-
-            ], 500);
+        // Annulation ou refus côté Facebook.
+        if ($request->filled('error')) {
+            return $this->backToApp(['error' => 'cancelled']);
         }
+
+        try {
+            $facebookUser = Socialite::driver('facebook')->user();
+        } catch (InvalidStateException $e) {
+            report($e);
+            return $this->backToApp(['error' => 'invalid_state']);
+        } catch (\Throwable $e) {
+            report($e);
+            return $this->backToApp(['error' => 'facebook_failed']);
+        }
+
+        $email = $facebookUser->getEmail();
+
+        // Facebook peut ne pas fournir l'adresse email.
+        if (!$email) {
+            return $this->backToApp(['error' => 'email_missing']);
+        }
+
+        $code = Str::random(64);
+
+        Cache::put(
+            'facebook_oauth_code:' . hash('sha256', $code),
+            [
+                'facebook_id'   => $facebookUser->getId(),
+                'email'         => $email,
+                'first_name'    => $facebookUser->user['first_name'] ?? null,
+                'last_name'     => $facebookUser->user['last_name'] ?? null,
+                'profile_photo' => $facebookUser->getAvatar(),
+            ],
+            now()->addMinutes(5)
+        );
+
+        // Seul le code voyage dans l'URL, jamais les données du profil.
+        return $this->backToApp(['code' => $code]);
     }
 }
