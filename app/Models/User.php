@@ -128,4 +128,9 @@ public function promotionRequests()
 {
     return $this->hasMany(PromotionRequest::class);
 }
+
+public function sendPasswordResetNotification($token): void
+{
+    $this->notify(new \App\Notifications\CustomResetPasswordNotification($token));
+}
 }

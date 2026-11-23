@@ -26,3 +26,21 @@ Route::get('/auth/facebook', [FacebookAuthController::class, 'redirect'])
 
 Route::get('/auth/facebook/callback', [FacebookAuthController::class, 'callback'])
     ->name('facebook.callback');
+
+Route::get('/password-reset', function () {
+    $token = request()->query('token');
+    $email = request()->query('email');
+
+    abort_unless(
+        is_string($token) &&
+        $token !== '' &&
+        is_string($email) &&
+        filter_var($email, FILTER_VALIDATE_EMAIL),
+        400
+    );
+
+    return view('auth.password-reset', [
+        'token' => $token,
+        'email' => $email,
+    ]);
+})->name('password.reset.page');

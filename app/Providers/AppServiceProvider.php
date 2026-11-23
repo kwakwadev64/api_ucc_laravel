@@ -27,7 +27,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        
+
         if ($this->app->environment('production') || config('app.env') === 'production') {
             URL::forceScheme('https');
         }
@@ -38,15 +38,15 @@ class AppServiceProvider extends ServiceProvider
         |--------------------------------------------------------------------------
         */
 
-        ResetPassword::createUrlUsing(function (object $notifiable, string $token) {
+       ResetPassword::createUrlUsing(function (object $notifiable, string $token) {
 
-            return config('app.frontend_url')
-                . '/password-reset'
-                . '?token=' . $token
-                . '&email=' . urlencode($notifiable->getEmailForPasswordReset());
+    return 'fsi-hub:///password-reset?'
+        . http_build_query([
+            'token' => $token,
+            'email' => $notifiable->getEmailForPasswordReset(),
+        ]);
 
-        });
-
+});
 
 
         /*
