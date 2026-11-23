@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "cd.fsiucc.fsihub",
+      "sha256_cert_fingerprints": [
+        "23:E2:6D:5F:AB:76:7C:97:5F:F8:A2:60:9C:2F:1C:D7:C5:2C:92:D9:A8:02:D9:F1:82:BB:88:E4:8E:B3:D7:C3"
+      ]
+    }
+  }
+]
+
