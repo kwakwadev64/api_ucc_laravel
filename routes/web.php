@@ -7,9 +7,7 @@ use App\Http\Controllers\Auth\FacebookAuthController;
 
 
 
-Route::get('/', function () {
-    return ['Laravel' => app()->version()];
-});
+Route::redirect('/', '/admin');
 
 require __DIR__.'/auth.php';
 
