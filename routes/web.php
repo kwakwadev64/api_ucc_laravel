@@ -14,6 +14,10 @@ Route::get('/', function () {
 require __DIR__.'/auth.php';
 
 
+Route::view('/politique-confidentialite', 'politique-confidentialite');
+
+Route::view('/suppression-donnees', 'suppression-donnees');
+
 Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])
     ->name('google.redirect');
 
