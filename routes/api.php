@@ -87,6 +87,7 @@ Route::post(
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
+    Route::get('/promotion-requests/current', [PromotionRequestController::class, 'current']);
     Route::post('/promotion-requests', [PromotionRequestController::class, 'store']);
 
     /*

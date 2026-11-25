@@ -3,22 +3,48 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\PromotionRequestStatusResource;
 use App\Models\AcademicYear;
 use App\Models\PromotionRequest;
+use App\Services\PromotionRequestService;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Database\QueryException;
 
 class PromotionRequestController extends Controller
 {
-    /**
-     * Soumettre une demande de passation de promotion.
-     * Un étudiant ne peut soumettre qu'une seule demande par année académique.
-     */
-    public function store(Request $request)
+    public function __construct(private readonly PromotionRequestService $promotionRequests) {}
+
+    public function current(Request $request): JsonResponse
     {
-        // 1. Validation des données
+        return response()->json([
+            'success' => true,
+            'data' => new PromotionRequestStatusResource(
+                $this->promotionRequests->currentStatusFor($request->user())
+            ),
+        ]);
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $availability = $this->promotionRequests->currentStatusFor($user);
+        $academicYear = $availability['academic_year'];
+
+        // Une décision définitive ne réautorise pas une demande la même année.
+        if ($availability['request']) {
+            return $this->conflictResponse($availability['request'], $academicYear);
+        }
+
+        if (! $availability['can_submit']) {
+            return response()->json([
+                'success' => false,
+                'message' => $availability['message'],
+            ], 422);
+        }
+
         $validated = $request->validate([
             'target_promotion_id' => 'required|exists:promotions,id',
             'proof_file' => 'required|image|max:4096',
@@ -30,48 +56,6 @@ class PromotionRequestController extends Controller
             'proof_file.max' => 'Le justificatif ne doit pas dépasser 4 Mo.',
         ]);
 
-        $user = $request->user();
-
-        // 2. Récupérer l'année académique active
-        $academicYear = AcademicYear::where('status', 'active')->first();
-
-        if (!$academicYear) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Aucune année académique active. Les demandes sont momentanément indisponibles.',
-            ], 422);
-        }
-
-        // 3. Vérifier la promotion actuelle de l'étudiant
-        if (!$user->promotion_id) {
-            return response()->json([
-                'success' => false,
-                'message' => "Votre promotion actuelle est introuvable. Veuillez contacter l'administration.",
-            ], 422);
-        }
-
-        // 4. Vérifier si l'étudiant a déjà soumis une demande cette année
-        $existingRequest = PromotionRequest::where('user_id', $user->id)
-            ->where('academic_year_id', $academicYear->id)
-            ->first();
-
-        if ($existingRequest) {
-            $messages = [
-                'pending' => 'Vous avez déjà une demande en attente de validation pour cette année académique.',
-                'approved' => 'Votre demande de passation a déjà été approuvée pour cette année académique.',
-                'rejected' => 'Votre demande a déjà été rejetée pour cette année académique. Vous ne pouvez plus soumettre une autre demande cette année.',
-            ];
-
-            return response()->json([
-                'success' => false,
-                'message' => $messages[$existingRequest->status]
-                    ?? 'Vous avez déjà soumis une demande pour cette année académique.',
-                'status' => $existingRequest->status,
-                'academic_year' => $academicYear->name,
-            ], 409);
-        }
-
-        // 5. Vérifier que la promotion cible est différente de l'actuelle
         if ((int) $validated['target_promotion_id'] === (int) $user->promotion_id) {
             return response()->json([
                 'success' => false,
@@ -79,17 +63,10 @@ class PromotionRequestController extends Controller
             ], 422);
         }
 
-        // 6. Enregistrer le justificatif
         $path = $request->file('proof_file')->store('proofs', 'public');
 
         try {
-            // 7. Créer la demande
-            $promotionRequest = DB::transaction(function () use (
-                $user,
-                $academicYear,
-                $validated,
-                $path
-            ) {
+            $promotionRequest = DB::transaction(function () use ($user, $academicYear, $validated, $path) {
                 return PromotionRequest::create([
                     'user_id' => $user->id,
                     'academic_year_id' => $academicYear->id,
@@ -99,37 +76,32 @@ class PromotionRequestController extends Controller
                     'status' => 'pending',
                 ]);
             });
-
-        } catch (QueryException $e) {
-
-            // 8. Gérer une éventuelle double soumission simultanée
+        } catch (QueryException $exception) {
             Storage::disk('public')->delete($path);
 
-            $existingRequest = PromotionRequest::where('user_id', $user->id)
-                ->where('academic_year_id', $academicYear->id)
-                ->first();
-
+            // La contrainte unique couvre aussi deux envois simultanés.
+            $existingRequest = $this->promotionRequests->findForYear($user, $academicYear);
             if ($existingRequest) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Vous avez déjà soumis une demande pour cette année académique.',
-                    'status' => $existingRequest->status,
-                    'academic_year' => $academicYear->name,
-                ], 409);
+                return $this->conflictResponse($existingRequest, $academicYear);
             }
 
-            throw $e;
+            throw $exception;
         }
 
-        // 9. Retourner la réponse
         return response()->json([
             'success' => true,
-            'message' => 'Votre demande de passation de promotion a été envoyée avec succès.',
-            'data' => $promotionRequest->load([
-                'academicYear',
-                'currentPromotion',
-                'targetPromotion',
-            ]),
+            'message' => 'Votre demande de passage de promotion a été envoyée avec succès.',
+            'data' => $promotionRequest->load(['academicYear', 'currentPromotion', 'targetPromotion']),
         ], 201);
+    }
+
+    private function conflictResponse(PromotionRequest $request, AcademicYear $academicYear): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => $this->promotionRequests->alreadySubmittedMessage($request),
+            'status' => $request->status,
+            'academic_year' => $academicYear->name,
+        ], 409);
     }
 }
