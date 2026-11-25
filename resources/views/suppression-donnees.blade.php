@@ -7,7 +7,7 @@
 
     <title>Suppression des données - FSI Hub</title>
 
-    <meta name="description" content="Découvrez comment demander la suppression de votre compte et de vos données personnelles sur FSI Hub.">
+    <meta name="description" content="Découvrez comment demander la suppression de votre compte FSI Hub et de vos données personnelles.">
 
     <style>
         * {
@@ -34,6 +34,11 @@
             font-size: 28px;
         }
 
+        header p {
+            margin-bottom: 0;
+            opacity: .9;
+        }
+
         main {
             max-width: 900px;
             margin: 35px auto;
@@ -47,6 +52,10 @@
             color: #123b68;
             font-size: 20px;
             margin-top: 30px;
+        }
+
+        a {
+            color: #1769aa;
         }
 
         .notice {
@@ -65,6 +74,10 @@
             padding: 12px 22px;
             border-radius: 7px;
             margin-top: 10px;
+        }
+
+        .button:hover {
+            background: #1769aa;
         }
 
         footer {
@@ -101,82 +114,171 @@
         des données personnelles associées.
     </p>
 
+    <p>
+        Tout utilisateur qui ne souhaite plus utiliser la plateforme
+        peut adresser une demande de suppression à l'équipe
+        responsable de FSI Hub, conformément aux modalités
+        décrites sur cette page.
+    </p>
+
     <h2>2. Comment demander la suppression de vos données ?</h2>
 
     <p>
         Pour demander la suppression de votre compte et de vos
-        données personnelles, veuillez suivre la procédure suivante :
+        données personnelles, veuillez suivre les étapes suivantes :
     </p>
 
     <ol>
-        <li>Envoyez un e-mail à contact@fsiucc.com ;</li>
-        <li>Utilisez comme objet : « Demande de suppression
-            des données - FSI Hub » ;</li>
-        <li>Indiquez l'adresse électronique associée à votre compte ;</li>
-        <li>Précisez si vous utilisez Facebook pour vous connecter
-            à FSI Hub.</li>
+        <li>
+            Envoyez un e-mail à
+            <a href="mailto:contact@fsiucc.com">contact@fsiucc.com</a>.
+        </li>
+        <li>
+            Utilisez comme objet :
+            « Demande de suppression des données - FSI Hub ».
+        </li>
+        <li>
+            Indiquez l'adresse électronique associée à votre compte FSI Hub.
+        </li>
+        <li>
+            Précisez votre nom complet et, si possible, votre
+            matricule de l'Université Catholique du Congo afin
+            de faciliter l'identification de votre compte.
+        </li>
+        <li>
+            Confirmez explicitement que vous souhaitez supprimer
+            votre compte et les données personnelles qui lui sont associées.
+        </li>
     </ol>
 
     <div class="notice">
         <strong>Faire une demande de suppression</strong>
 
         <p>
-            Cliquez sur le bouton ci-dessous pour envoyer
-            votre demande par e-mail.
+            Vous pouvez utiliser le bouton ci-dessous pour préparer
+            automatiquement un e-mail de demande de suppression.
         </p>
 
         <a class="button"
-           href="mailto:contact@fsiucc.com?subject=Demande%20de%20suppression%20des%20donnees%20-%20FSI%20Hub">
+           href="mailto:contact@fsiucc.com?subject=Demande%20de%20suppression%20des%20donnees%20-%20FSI%20Hub&body=Bonjour%2C%0A%0AJe%20souhaite%20demander%20la%20suppression%20de%20mon%20compte%20FSI%20Hub%20et%20des%20donnees%20personnelles%20qui%20y%20sont%20associees.%0A%0ANom%20complet%20%3A%20%0AAdresse%20e-mail%20du%20compte%20%3A%20%0AMatricule%20UCC%20%3A%20%0A%0AMerci%20de%20bien%20vouloir%20traiter%20ma%20demande.%0A%0ACordialement.">
             Envoyer une demande
         </a>
     </div>
 
     <h2>3. Quelles données peuvent être supprimées ?</h2>
 
-    <p>La demande peut concerner notamment :</p>
+    <p>
+        La demande de suppression concerne les données personnelles
+        associées au compte de l'utilisateur, notamment :
+    </p>
 
     <ul>
-        <li>Les informations personnelles du compte ;</li>
-        <li>L'adresse électronique associée au compte ;</li>
-        <li>L'identifiant Facebook associé à l'authentification ;</li>
-        <li>Les informations de connexion enregistrées ;</li>
-        <li>Les autres données personnelles associées au compte.</li>
+        <li>Le nom, le postnom et le prénom ;</li>
+        <li>L'adresse électronique ;</li>
+        <li>Le numéro de téléphone ;</li>
+        <li>La photo de profil ;</li>
+        <li>Le matricule de l'Université Catholique du Congo ;</li>
+        <li>Les identifiants et informations liés à l'authentification ;</li>
+        <li>Les autres informations personnelles associées au compte.</li>
     </ul>
 
-    <h2>4. Traitement de la demande</h2>
+    <p>
+        La suppression du compte entraîne également la suppression
+        des informations personnelles qui lui sont associées,
+        sous réserve des éventuelles obligations légales ou
+        nécessités techniques justifiant temporairement leur conservation.
+    </p>
+
+    <h2>4. Vérification et traitement de la demande</h2>
 
     <p>
-        Après réception de votre demande, notre équipe procédera
-        à la vérification de votre identité afin de protéger
-        votre compte contre toute demande frauduleuse.
+        Après réception de la demande, l'équipe FSI Hub peut
+        procéder à une vérification de l'identité du demandeur
+        afin de s'assurer que la requête provient bien du
+        propriétaire du compte concerné.
     </p>
 
     <p>
-        Une fois la demande vérifiée, les données concernées
-        seront supprimées dans un délai raisonnable, sous réserve
-        des obligations légales de conservation applicables.
-    </p>
-
-    <h2>5. Connexion avec Facebook</h2>
-
-    <p>
-        Si vous avez utilisé Facebook Login pour accéder à FSI Hub,
-        vous pouvez également retirer l'autorisation accordée
-        à notre application depuis les paramètres Facebook,
-        dans la rubrique Applications et sites web.
+        Cette vérification permet notamment d'éviter les demandes
+        frauduleuses ou les suppressions effectuées sans
+        l'autorisation du titulaire du compte.
     </p>
 
     <p>
-        Le retrait de cette autorisation auprès de Facebook
-        ne remplace pas une demande de suppression des données
-        déjà enregistrées sur FSI Hub.
+        Une fois la demande vérifiée et validée, les données
+        personnelles concernées seront supprimées dans un délai
+        raisonnable.
     </p>
 
-    <h2>6. Contact</h2>
+    <p>
+        Les éventuelles données devant être conservées pour
+        satisfaire à une obligation légale ou pour une nécessité
+        technique particulière seront traitées conformément
+        aux exigences applicables.
+    </p>
+
+    <h2>5. Connexion avec Google</h2>
 
     <p>
-        Pour toute question relative à la suppression de vos
-        données personnelles, contactez-nous :
+        FSI Hub propose une fonctionnalité de connexion avec Google.
+        Si vous avez utilisé votre compte Google pour vous
+        authentifier sur la plateforme, les informations obtenues
+        auprès de Google, notamment votre nom, votre prénom,
+        votre adresse électronique et votre photo de profil,
+        peuvent être concernées par votre demande de suppression.
+    </p>
+
+    <p>
+        La suppression de votre compte FSI Hub entraîne la
+        suppression des données personnelles associées à cette
+        authentification, conformément à la procédure décrite
+        sur cette page.
+    </p>
+
+    <p>
+        Vous pouvez également gérer ou retirer les autorisations
+        accordées à FSI Hub depuis les paramètres de sécurité
+        de votre compte Google.
+    </p>
+
+    <p>
+        <a href="https://myaccount.google.com/connections"
+           target="_blank"
+           rel="noopener noreferrer">
+            Gérer les connexions de votre compte Google
+        </a>
+    </p>
+
+    <p>
+        Le retrait d'une autorisation auprès de Google ne remplace
+        pas une demande de suppression des données déjà enregistrées
+        sur FSI Hub. Pour supprimer ces données, vous devez suivre
+        la procédure indiquée dans la présente page.
+    </p>
+
+    <h2>6. Conséquences de la suppression</h2>
+
+    <p>
+        Après la suppression du compte, l'utilisateur ne pourra
+        plus accéder à son ancien compte FSI Hub ni utiliser
+        les fonctionnalités nécessitant une authentification.
+    </p>
+
+    <p>
+        La suppression du compte est une opération qui concerne
+        les informations personnelles associées à l'utilisateur.
+        Elle n'implique pas nécessairement la suppression des
+        contenus pédagogiques généraux, des cours, des anciens
+        TP, TD, examens, tutoriels ou actualités mis à disposition
+        de l'ensemble des utilisateurs.
+    </p>
+
+    <h2>7. Contact</h2>
+
+    <p>
+        Pour toute question concernant la suppression de votre
+        compte ou de vos données personnelles, vous pouvez
+        contacter l'équipe FSI Hub :
     </p>
 
     <p>
@@ -184,7 +286,15 @@
         <a href="mailto:contact@fsiucc.com">contact@fsiucc.com</a>
     </p>
 
-    <p><strong>Plateforme :</strong> FSI Hub</p>
+    <p>
+        <strong>Plateforme :</strong> FSI Hub
+    </p>
+
+    <p>
+        <strong>Institution :</strong>
+        Faculté des Sciences Informatiques,
+        Université Catholique du Congo.
+    </p>
 
 </main>
 
