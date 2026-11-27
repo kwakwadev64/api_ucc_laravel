@@ -118,7 +118,7 @@
     <div class="container">
 
         <img
-            src="{{ asset('images/fsi-hub-logo.jpeg') }}"
+            src="{{ asset('images/fsi-hub-logo.png') }}"
             alt="FSI Hub"
             class="logo"
         >
