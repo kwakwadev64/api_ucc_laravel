@@ -55,7 +55,7 @@ class RegisterUserRequest extends FormRequest
                 'unique:users,phone',
             ],
             'matricule' => [
-                'nullable',
+                'required',
                 'string',
                 'max:20',
                 'unique:users,matricule',

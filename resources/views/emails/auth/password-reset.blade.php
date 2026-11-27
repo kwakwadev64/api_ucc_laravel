@@ -22,7 +22,7 @@
                                 <tr>
                                     <td align="center" valign="middle" style="padding:0 12px;">
                                        <img
-                                            src="{{ asset('images/fsi-hub-logo.png') }}"
+                                            src="{{ asset('images/fsi-hub-logo.jpeg') }}"
                                             alt="FSI Hub"
                                             width="75"
                                             style="display:block; width:75px; height:auto; border:0; object-fit:contain;"
