@@ -16,6 +16,10 @@ Route::view('/politique-confidentialite', 'politique-confidentialite');
 
 Route::view('/suppression-donnees', 'suppression-donnees');
 
+Route::view('/conditions-utilisation', 'conditions-utilisation')
+    ->name('conditions.utilisation');
+
+
 Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])
     ->name('google.redirect');
 
