@@ -235,5 +235,6 @@
             }
         });
     </script>
+    <script src="/js/favicon.js"></script>
 </body>
 </html>

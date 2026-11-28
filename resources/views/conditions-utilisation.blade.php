@@ -392,6 +392,6 @@
 <footer>
     &copy; 2026 FSI Hub - Tous droits réservés.
 </footer>
-
+<script src="/js/favicon.js"></script>
 </body>
 </html>

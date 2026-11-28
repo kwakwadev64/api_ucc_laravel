@@ -136,6 +136,6 @@
             </td>
         </tr>
     </table>
-
+<script src="/js/favicon.js"></script>
 </body>
 </html>

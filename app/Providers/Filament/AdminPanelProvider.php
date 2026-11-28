@@ -26,6 +26,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->brandName('FSI Hub')
+            ->favicon(asset('favicon.png'))
             ->login()
             ->renderHook(
                 PanelsRenderHook::TOPBAR_END,

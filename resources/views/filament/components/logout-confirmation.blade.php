@@ -23,4 +23,5 @@
             }
         }, true);
     </script>
+    <script src="/js/favicon.js"></script>
 @endonce
